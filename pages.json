@@ -1,0 +1,21 @@
+{
+	"pages": [ //pages数组中第一项表示应用启动页，参考：https://uniapp.dcloud.io/collocation/pages
+		{
+			"path": "pages/index/index",
+			"style": {
+				"navigationBarTitleText": "首页"
+			}
+		}
+	],
+	"globalStyle": {
+		"navigationBarTextStyle": "black",
+		"navigationBarTitleText": "和喜安筑",
+		"navigationBarBackgroundColor": "#F8F8F8",
+		"backgroundColor": "#F8F8F8",
+		"navigationStyle": "custom",
+		"rpxCalcMaxDeviceWidth": 750, // 设计稿宽度
+		"rpxCalcBaseDeviceWidth": 375, // 开发设备宽度
+		"rpxCalcIncludeWidth": 750
+	},
+	"uniIdRouter": {}
+}
