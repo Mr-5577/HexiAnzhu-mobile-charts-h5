@@ -4,6 +4,7 @@
 			console.log('App Launch')
 		},
 		onShow: function() {
+			console.log('process.env.NODE_ENV:', process.env.NODE_ENV)
 			console.log('App Show')
 		},
 		onHide: function() {
