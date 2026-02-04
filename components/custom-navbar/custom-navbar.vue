@@ -7,23 +7,29 @@
         <!-- 导航栏内容 -->
         <view class="navbar-content">
             <!-- 左侧：返回按钮 -->
-            <view v-if="showBack" class="nav-left" @click="handleBack">
+            <view v-if="showBack" class="nav-left" :class="{ 'has-content': showBack }" @click="handleBack">
                 <view class="back-container">
-                    <text class="back-icon iconfont icon-back">‹</text>
+                    <!-- <text class="back-icon iconfont icon-back"></text> -->
+                    <uni-icons type="back" size="20" color="#333"></uni-icons>
                     <text v-if="backText" class="back-text">{{ backText }}</text>
                 </view>
             </view>
 
             <!-- 中间：标题 -->
-            <view class="nav-center">
-                <text class="nav-title" :style="titleStyle">{{ title }}</text>
+            <view class="nav-center" :class="{
+                'left-only': showBack && !hasRightContent,
+                'right-only': !showBack && hasRightContent,
+                'both-sides': showBack && hasRightContent,
+                'center-only': !showBack && !hasRightContent
+            }">
+                <text class="nav-title">{{ title }}</text>
             </view>
 
             <!-- 右侧：操作区域 -->
-            <view class="nav-right">
+            <view class="nav-right" :class="{ 'has-content': hasRightContent }">
                 <slot name="right">
                     <!-- 默认右侧内容 -->
-                    <view v-if="showHome" class="home-btn" @click="goHome">
+                    <view v-if="showRight" class="home-btn" @click="goHome">
                         <text class="iconfont icon-home">🏠</text>
                     </view>
                 </slot>
@@ -33,15 +39,15 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, useSlots } from 'vue'
 
 const props = defineProps({
     title: { type: String, default: '' },
     backgroundColor: { type: String, default: '#ffffff' },
     titleColor: { type: String, default: '#333333' },
     showBack: { type: Boolean, default: true },
-    backText: { type: String, default: '' },
-    showHome: { type: Boolean, default: false },
+    backText: { type: String, default: '返回' },
+    showRight: { type: Boolean, default: false },
     fixed: { type: Boolean, default: true },
     translucent: { type: Boolean, default: false },
     borderBottom: { type: Boolean, default: true },
@@ -50,9 +56,20 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['back', 'home'])
+const slots = useSlots()
 
 const statusBarHeight = ref(0)
 const systemInfo = ref({})
+
+// 检查是否有右侧内容（包括默认的home按钮和slot内容）
+const hasRightContent = computed(() => {
+    // 如果有插槽内容，则显示插槽
+    if (!!slots.right) {
+        return true
+    }
+    // 如果没有插槽内容，则检查showRight属性
+    return props.showRight
+})
 
 const statusBarStyle = computed(() => ({
     height: px2rpx(statusBarHeight.value) + 'rpx'
@@ -76,12 +93,6 @@ const navbarStyle = computed(() => {
 
     return style
 })
-
-const titleStyle = computed(() => ({
-    color: props.titleColor,
-    fontSize: '34rpx',
-    fontWeight: props.titleBold ? '600' : 'normal'
-}))
 
 onMounted(() => {
     initSystemInfo()
@@ -115,9 +126,6 @@ const handleBack = () => {
 }
 
 const goHome = () => {
-    uni.switchTab({
-        url: '/pages/index/index'
-    })
     emit('home')
 }
 </script>
@@ -147,15 +155,21 @@ const goHome = () => {
         align-items: center;
         justify-content: space-between;
         height: 88rpx;
-        padding: 0 32rpx;
+        padding: 0 28rpx;
         box-sizing: border-box;
+        position: relative;
 
         .nav-left {
-            flex: 1;
+            flex: 0 0 auto;
             display: flex;
             align-items: center;
             justify-content: flex-start;
             min-width: 120rpx;
+            z-index: 1;
+
+            &.has-content {
+                flex: 1;
+            }
 
             .back-container {
                 display: flex;
@@ -178,12 +192,47 @@ const goHome = () => {
         }
 
         .nav-center {
-            flex: 2;
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 0;
+            bottom: 0;
             display: flex;
             align-items: center;
             justify-content: center;
             text-align: center;
-            overflow: hidden;
+            pointer-events: none;
+            z-index: 0;
+
+            // 默认情况：左右都有内容
+            &.both-sides {
+                left: 120rpx;
+                right: 120rpx;
+                justify-content: center;
+            }
+
+            // 只有左侧有内容
+            &.left-only {
+                left: 120rpx;
+                right: 0;
+                justify-content: center;
+                padding-right: 120rpx;
+            }
+
+            // 只有右侧有内容
+            &.right-only {
+                left: 0;
+                right: 120rpx;
+                justify-content: center;
+                padding-left: 120rpx;
+            }
+
+            // 只有标题（居中显示）
+            &.center-only {
+                left: 0;
+                right: 0;
+                justify-content: center;
+            }
 
             .nav-title {
                 font-size: 34rpx;
@@ -194,15 +243,22 @@ const goHome = () => {
                 overflow: hidden;
                 text-overflow: ellipsis;
                 white-space: nowrap;
+                pointer-events: none;
             }
         }
 
         .nav-right {
-            flex: 1;
+            flex: 0 0 auto;
             display: flex;
             align-items: center;
             justify-content: flex-end;
             min-width: 120rpx;
+            z-index: 1;
+
+            &.has-content {
+                flex: 1;
+                justify-content: flex-end;
+            }
 
             .home-btn {
                 display: flex;
@@ -268,6 +324,21 @@ const goHome = () => {
             .nav-center {
                 .nav-title {
                     font-size: 36rpx;
+                }
+
+                &.both-sides {
+                    left: 140rpx;
+                    right: 140rpx;
+                }
+
+                &.left-only {
+                    left: 140rpx;
+                    padding-right: 140rpx;
+                }
+
+                &.right-only {
+                    right: 140rpx;
+                    padding-left: 140rpx;
                 }
             }
         }
