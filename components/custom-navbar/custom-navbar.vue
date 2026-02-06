@@ -82,7 +82,7 @@ const navbarStyle = computed(() => {
     }
 
     if (props.translucent) {
-        style.backgroundColor = 'rgba(255, 255, 255, 0.95)'
+        // style.backgroundColor = 'rgba(255, 255, 255, 0.95)'
         style.backdropFilter = 'blur(20rpx)'
         style.webkitBackdropFilter = 'blur(20rpx)'
     }
@@ -133,7 +133,6 @@ const goHome = () => {
 <style lang="scss" scoped>
 .custom-navbar {
     width: 100%;
-    background-color: #ffffff;
     box-sizing: border-box;
     overflow: hidden;
 
@@ -201,7 +200,6 @@ const goHome = () => {
             align-items: center;
             justify-content: center;
             text-align: center;
-            // pointer-events: none;
             z-index: 0;
 
             // 默认情况：左右都有内容

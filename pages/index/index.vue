@@ -1,32 +1,45 @@
 <template>
-	<!-- 固定导航栏 -->
-	<custom-navbar title="数据驾驶舱" :show-back="false" fixed :backgroundColor="navbarBgColor"
-		:title-color="navbarTitleColor" :translucent="true" :border-bottom="showNavBorder">
-		<!-- 右侧自定义内容 -->
-		<template #right>
-			<view @click="openSearchPopup">
-				<uni-icons type="search" size="20" color="#333" />
-			</view>
-		</template>
-	</custom-navbar>
+	<view class="home-page">
+		<!-- 固定导航栏 -->
+		<custom-navbar title="数据驾驶舱" :show-back="false" fixed :backgroundColor="navbarBgColor"
+			:title-color="navbarTitleColor" :translucent="true" :border-bottom="showNavBorder">
+			<!-- 右侧自定义内容 -->
+			<template #right>
+				<view @click="openSearchPopup">
+					<uni-icons type="search" size="20" color="#333" />
+				</view>
+			</template>
+		</custom-navbar>
 
-	<!-- 滚动内容区域 -->
-	<scroll-view class="scroll-container" :style="contentTopStyle" scroll-y :refresher-enabled="true"
-		:refresher-triggered="refresherTriggered" refresher-default-style="none" refresher-background="#fff"
-		@refresherrefresh="onRefresh" @scroll="onScroll" :show-scrollbar="false">
-		<!-- 主内容 -->
-		<view class="content">
-			<!-- 底部提示 -->
-			<view class="bottom-tips" v-if="showBottomTips">
-				<text>—— 我是有底线的 ——</text>
+		<!-- 滚动内容区域 -->
+		<scroll-view class="scroll-container" :style="contentTopStyle" scroll-y :refresher-enabled="true"
+			:refresher-triggered="refresherTriggered" refresher-default-style="none" refresher-background="#fff"
+			@refresherrefresh="onRefresh" @scroll="onScroll" :show-scrollbar="false">
+			<!-- 下拉刷新区域 -->
+			<view class="refresher-container" v-if="refresherTriggered">
+				<view class="refresher-content">
+					<uni-icons type="spinner-cycle" size="20" color="#999999" />
+					<text class="refresh-text">{{ refreshText }}</text>
+				</view>
 			</view>
-
-			<!-- 滚动到顶部按钮 -->
-			<view class="scroll-to-top" v-show="showScrollTopBtn" @click="scrollToTop">
-				<text class="iconfont icon-top">↑</text>
+			<!-- 主内容 -->
+			<view class="content">
+				<!-- 库存统计 -->
+				<inventory></inventory>
+				<!-- 目标达成统计 -->
+				<goal-achieved></goal-achieved>
+				
+				<!-- 底部提示 -->
+				<view class="bottom-tips" v-if="showBottomTips">
+					<text>—— 我是有底线的 ——</text>
+				</view>
+				<!-- 滚动到顶部按钮 -->
+				<view class="scroll-to-top" v-show="showScrollTopBtn" @click="scrollToTop">
+					<text class="iconfont icon-top">↑</text>
+				</view>
 			</view>
-		</view>
-	</scroll-view>
+		</scroll-view>
+	</view>
 	<!-- 搜索弹窗组件 -->
 	<uni-popup ref="searchPopupRef" type="right" background-color="#fff" border-radius="15rpx 0 0 15rpx"
 		:is-mask-click="false">
@@ -70,11 +83,15 @@
 <script setup>
 import CustomNavbar from '@/components/custom-navbar/custom-navbar.vue'
 import ProjectSelectPopup from './project-select-popup.vue'
+import Inventory from './components/inventory.vue'
+import GoalAchieved from './components/goal-achieved.vue'
 import dayjs from 'dayjs'
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 
 // 响应式数据
 const refresherTriggered = ref(false)
+const refreshComplete = ref(false)
+const refreshText = ref('下拉刷新')
 const scrollTop = ref(0)
 const showScrollTopBtn = ref(false)
 const showBottomTips = ref(false)
@@ -102,12 +119,18 @@ const contentTopStyle = computed(() => {
 // 下拉刷新
 const onRefresh = () => {
 	refresherTriggered.value = true
+	refreshText.value = '正在刷新...'
+	refreshComplete.value = false
 
 	// 模拟异步请求
 	setTimeout(() => {
-		uni.stopPullDownRefresh && uni.stopPullDownRefresh()
+		refreshComplete.value = true
+		refreshText.value = '刷新成功'
+
 		setTimeout(() => {
 			refresherTriggered.value = false
+			refreshText.value = '下拉刷新'
+			refreshComplete.value = false
 
 			// 这里可以更新数据
 			uni.showToast({
@@ -125,7 +148,7 @@ const onScroll = (e) => {
 
 	// 控制导航栏透明度
 	const alpha = Math.min(scrollTop.value / 100, 1)
-	navbarBgColor.value = `rgba(255, 255, 255, ${alpha})`
+	// navbarBgColor.value = `rgba(255, 255, 255, ${alpha})`
 	navbarTitleColor.value = alpha > 0.5 ? '#333333' : '#ffffff'
 	showNavBorder.value = alpha > 0.8
 
@@ -202,16 +225,48 @@ onUnmounted(() => {
 </script>
 
 <style lang="scss" scoped>
+.home-page {
+	width: 100%;
+	height: 100vh;
+	background: linear-gradient(135deg, #e0f7fa 0%, #ffebee 100%);
+}
+
 /* 滚动容器 */
 .scroll-container {
 	height: 100vh;
 	width: 100%;
 	box-sizing: border-box;
+
+	/* 隐藏 UniApp 自带的刷新容器 */
+	:deep(.uni-scroll-view-refresher) {
+		display: none !important;
+	}
+}
+
+/* 下拉刷新样式 */
+.refresher-container {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	padding: 30rpx 0;
+
+	.refresher-content {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+
+		.refresh-text {
+			font-size: 28rpx;
+			color: #999999;
+		}
+	}
 }
 
 /* 内容区域 */
 .content {
 	min-height: 100vh;
+	padding: 30rpx 30rpx;
+	box-sizing: border-box;
 }
 
 /* 搜索弹窗样式优化 */
@@ -294,54 +349,34 @@ onUnmounted(() => {
 			}
 
 			&.query-action {
-				margin-top: 64rpx;
-				/* 增加与上面元素的间距 */
+				margin-top: 50rpx;
 				display: flex;
 				justify-content: space-between;
 				gap: 24rpx;
-				/* 按钮间增加间距 */
-
 				.cancel-btn,
 				.query-btn {
-					flex: 1;
-					height: 88rpx;
-					/* 增加按钮高度 */
+					height: 66rpx;
+					width: 150rpx;
+					// flex: 1;
 					display: flex;
 					justify-content: center;
 					align-items: center;
-					font-size: 34rpx;
-					/* 增大字体 */
+					font-size: 30rpx;
 					border-radius: 12rpx;
-					/* 统一圆角 */
 					font-weight: 500;
 					transition: all 0.3s ease;
-					border: none;
-
 					&:active {
 						transform: scale(0.96);
 					}
 				}
-
 				.cancel-btn {
 					background: #f8f8f8;
 					color: #666;
-					border: 1rpx solid #e0e0e0;
-
-					&:active {
-						background: #f0f0f0;
-					}
 				}
-
 				.query-btn {
-					background: linear-gradient(135deg, #007aff, #0056cc);
-					/* 渐变背景 */
+					background: linear-gradient(135deg, #36cfc9 0%, #f759ab 100%);
 					color: #fff;
 					box-shadow: 0 8rpx 24rpx rgba(0, 122, 255, 0.3);
-
-					&:active {
-						background: linear-gradient(135deg, #0056cc, #004099);
-						box-shadow: 0 4rpx 16rpx rgba(0, 122, 255, 0.2);
-					}
 				}
 			}
 		}
