@@ -3,7 +3,6 @@
 		<!-- 固定导航栏 -->
 		<custom-navbar title="数据驾驶舱" :show-back="false" fixed :backgroundColor="navbarBgColor"
 			:title-color="navbarTitleColor" :translucent="true" :border-bottom="showNavBorder">
-			<!-- 右侧自定义内容 -->
 			<template #right>
 				<view @click="openSearchPopup">
 					<uni-icons type="search" size="20" color="#333" />
@@ -14,40 +13,46 @@
 		<!-- 滚动内容区域 -->
 		<scroll-view class="scroll-container" :style="contentTopStyle" scroll-y :refresher-enabled="true"
 			:refresher-triggered="refresherTriggered" refresher-default-style="none" refresher-background="#fff"
-			@refresherrefresh="onRefresh" @scroll="onScroll" :show-scrollbar="false">
+			@refresherrefresh="onRefresh" @refresherpulling="onPulling" @refresherrestore="onRestore" @scroll="onScroll"
+			:show-scrollbar="false" :scroll-top="scrollTopVal" :scroll-with-animation="true">
 			<!-- 下拉刷新区域 -->
-			<view class="refresher-container" v-if="refresherTriggered">
-				<view class="refresher-content">
-					<uni-icons type="spinner-cycle" size="20" color="#999999" />
+			<view class="refresher-container" :style="{ height: pullHeight + 'px' }">
+				<view class="refresher-content" :class="{ refreshing: refresherTriggered }">
+					<view class="loading-animation" v-if="refresherTriggered">
+						<view class="spinner">
+							<view class="spinner-dot" v-for="i in 5" :key="i"
+								:style="{ 'animationDelay': (i - 1) * 0.1 + 's' }">
+							</view>
+						</view>
+					</view>
 					<text class="refresh-text">{{ refreshText }}</text>
 				</view>
 			</view>
+
 			<!-- 主内容 -->
 			<view class="content">
-				<!-- 库存统计 -->
 				<inventory></inventory>
-				<!-- 目标达成统计 -->
 				<goal-achieved></goal-achieved>
-				
-				<!-- 底部提示 -->
+
 				<view class="bottom-tips" v-if="showBottomTips">
 					<text>—— 我是有底线的 ——</text>
 				</view>
-				<!-- 滚动到顶部按钮 -->
-				<view class="scroll-to-top" v-show="showScrollTopBtn" @click="scrollToTop">
-					<text class="iconfont icon-top">↑</text>
-				</view>
 			</view>
 		</scroll-view>
+
+		<!-- 回到顶部按钮 -->
+		<view class="scroll-to-top" v-show="showScrollTopBtn" @click="scrollToTop">
+			<text class="iconfont icon-top">↑</text>
+		</view>
 	</view>
+
 	<!-- 搜索弹窗组件 -->
 	<uni-popup ref="searchPopupRef" type="right" background-color="#fff" border-radius="15rpx 0 0 15rpx"
 		:is-mask-click="false">
 		<view class="search-popup-form">
 			<view class="form-container">
-				<!-- 项目选择 -->
 				<view class="form-item project-select">
-					<view class="item-lable">项目</view>
+					<view class="item-label">项目</view>
 					<view class="item-content" @click="showProjectSelect">
 						<text class="item-text" :class="{ 'placeholder': selectedProjects.length === 0 }">
 							{{ selectedProjects.length > 0 ? `${selectedProjects.length}个项目` : '选择项目' }}
@@ -55,27 +60,24 @@
 						<text class="iconfont icon-arrow">›</text>
 					</view>
 				</view>
-				<!-- 日期选择 -->
+
 				<view class="form-item date-picker">
-					<view class="item-lable">日期</view>
+					<view class="item-label">日期</view>
 					<picker mode="date" :value="dateTime" @change="bindTimeChange">
 						<view class="item-content">
 							<text class="item-text">{{ dateTime }}</text>
 						</view>
 					</picker>
 				</view>
-				<!-- 查询按钮 -->
+
 				<view class="form-item query-action">
-					<button class="cancel-btn" @click="closeSearchPop">
-						<text>取消</text>
-					</button>
-					<button class="query-btn">
-						<text>查询</text>
-					</button>
+					<button class="cancel-btn" @click="closeSearchPop">取消</button>
+					<button class="query-btn">查询</button>
 				</view>
 			</view>
 		</view>
 	</uni-popup>
+
 	<!-- 项目选择弹窗组件 -->
 	<project-select-popup ref="projectSelectPopupRef" @confirm="handleProjectConfirm" />
 </template>
@@ -86,22 +88,24 @@ import ProjectSelectPopup from './project-select-popup.vue'
 import Inventory from './components/inventory.vue'
 import GoalAchieved from './components/goal-achieved.vue'
 import dayjs from 'dayjs'
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 
 // 响应式数据
+const isReadyToRefresh = ref(false)
+const pullHeight = ref(0)
+const isPulling = ref(false)
 const refresherTriggered = ref(false)
 const refreshComplete = ref(false)
 const refreshText = ref('下拉刷新')
 const scrollTop = ref(0)
+const scrollTopVal = ref(0) // 用于控制scroll-view滚动位置
 const showScrollTopBtn = ref(false)
 const showBottomTips = ref(false)
 const navbarBgColor = ref('rgba(255, 255, 255, 0)')
 const navbarTitleColor = ref('#ffffff')
 const showNavBorder = ref(false)
 const searchPopupRef = ref(null)
-// 创建模板引用
 const projectSelectPopupRef = ref(null)
-// 存储选中的项目
 const selectedProjects = ref([])
 const dateTime = ref('')
 
@@ -109,119 +113,99 @@ const dateTime = ref('')
 const contentTopStyle = computed(() => {
 	const info = uni.getSystemInfoSync()
 	const statusBarHeight = info.statusBarHeight || 0
-	const navBarHeight = 44 // 导航栏内容高度
-	const totalHeight = statusBarHeight + navBarHeight
-	return {
-		paddingTop: totalHeight + 'px'
-	}
+	return { paddingTop: (statusBarHeight + 44) + 'px' }
 })
 
-// 下拉刷新
+// 下拉刷新相关方法
 const onRefresh = () => {
 	refresherTriggered.value = true
 	refreshText.value = '正在刷新...'
 	refreshComplete.value = false
 
-	// 模拟异步请求
 	setTimeout(() => {
 		refreshComplete.value = true
 		refreshText.value = '刷新成功'
+		uni.showToast({ title: '刷新成功', icon: 'success', duration: 1500 })
 
 		setTimeout(() => {
 			refresherTriggered.value = false
-			refreshText.value = '下拉刷新'
 			refreshComplete.value = false
-
-			// 这里可以更新数据
-			uni.showToast({
-				title: '刷新成功',
-				icon: 'success',
-				duration: 1500
-			})
+			refreshText.value = '下拉刷新'
 		}, 1000)
 	}, 1500)
+}
+
+const onPulling = (e) => {
+	isPulling.value = true
+	const height = e.detail.deltaY
+	pullHeight.value = Math.min(height, 120)
+
+	if (height > 80) {
+		isReadyToRefresh.value = true
+		refreshText.value = '释放刷新'
+	} else {
+		isReadyToRefresh.value = false
+		refreshText.value = '下拉刷新'
+	}
+}
+
+const onRestore = () => {
+	if (!refresherTriggered.value) {
+		setTimeout(() => {
+			pullHeight.value = 0
+			isPulling.value = false
+			isReadyToRefresh.value = false
+			refreshText.value = '下拉刷新'
+		}, 300)
+	}
 }
 
 // 滚动事件处理
 const onScroll = (e) => {
 	scrollTop.value = e.detail.scrollTop
-
 	// 控制导航栏透明度
 	const alpha = Math.min(scrollTop.value / 100, 1)
-	// navbarBgColor.value = `rgba(255, 255, 255, ${alpha})`
 	navbarTitleColor.value = alpha > 0.5 ? '#333333' : '#ffffff'
 	showNavBorder.value = alpha > 0.8
-
 	// 显示/隐藏返回顶部按钮
-	showScrollTopBtn.value = scrollTop.value > 500
+	showScrollTopBtn.value = scrollTop.value > 50
 
 	// 判断是否到达底部
-	const scrollHeight = e.detail.scrollHeight
-	const scrollViewHeight = e.detail.scrollViewHeight
-	const scrollTopPos = e.detail.scrollTop
-
+	const { scrollHeight, scrollViewHeight, scrollTop: scrollTopPos } = e.detail
 	if (scrollHeight - scrollViewHeight - scrollTopPos < 50) {
 		showBottomTips.value = true
 		loadMoreData()
 	}
 }
 
-// 加载更多数据
-const loadMoreData = () => {
-	console.log('加载更多数据...')
-	// 这里可以加载更多数据
-}
+const loadMoreData = () => console.log('加载更多数据...')
 
 // 滚动到顶部
 const scrollToTop = () => {
-	uni.pageScrollTo({
-		scrollTop: 0,
-		duration: 300
-	})
-	showScrollTopBtn.value = false
-}
-// 打开搜索弹窗
-const openSearchPopup = () => {
-	console.log('1324354')
-	if (searchPopupRef.value) {
-		searchPopupRef.value.open()
-	}
+	scrollTopVal.value = scrollTop.value
+	// 通过nextTick确保scroll-top值被重置时能触发滚动
+	setTimeout(() => {
+		scrollTopVal.value = 0
+		showScrollTopBtn.value = false
+	}, 10)
 }
 
-// 打开项目选择弹窗
-const showProjectSelect = () => {
-	if (projectSelectPopupRef.value) {
-		// 调用子组件暴露的 openPopup 方法
-		projectSelectPopupRef.value.openPopup()
-	}
-}
+// 搜索相关方法
+const openSearchPopup = () => searchPopupRef.value?.open()
+const closeSearchPop = () => searchPopupRef.value?.close()
 
-// 处理项目选择确认
+// 项目选择相关方法
+const showProjectSelect = () => projectSelectPopupRef.value?.openPopup()
 const handleProjectConfirm = (projects) => {
 	selectedProjects.value = projects
-	console.log('父组件收到选中的项目:', projects)
-	// 这里可以处理选中的项目数据
-	uni.showToast({
-		title: `已选择 ${projects.length} 个项目`,
-		icon: 'success'
-	})
+	uni.showToast({ title: `已选择 ${projects.length} 个项目`, icon: 'success' })
 }
-// 选择时间
-const bindTimeChange = (e) => {
-	dateTime.value = e.detail.value
-}
-const closeSearchPop = () => {
-	if (searchPopupRef.value) {
-		searchPopupRef.value.close()
-	}
-}
-// 监听页面显示/隐藏
-onMounted(() => {
-	dateTime.value = dayjs().format('YYYY-MM-DD')
-})
 
-onUnmounted(() => {
-})
+// 日期选择
+const bindTimeChange = (e) => dateTime.value = e.detail.value
+
+// 生命周期
+onMounted(() => dateTime.value = dayjs().format('YYYY-MM-DD'))
 </script>
 
 <style lang="scss" scoped>
@@ -231,64 +215,96 @@ onUnmounted(() => {
 	background: linear-gradient(135deg, #e0f7fa 0%, #ffebee 100%);
 }
 
-/* 滚动容器 */
 .scroll-container {
 	height: 100vh;
 	width: 100%;
 	box-sizing: border-box;
 
-	/* 隐藏 UniApp 自带的刷新容器 */
 	:deep(.uni-scroll-view-refresher) {
 		display: none !important;
 	}
 }
 
-/* 下拉刷新样式 */
 .refresher-container {
+	overflow: hidden;
+	transition: height 0.3s ease;
 	display: flex;
 	justify-content: center;
-	align-items: center;
-	padding: 30rpx 0;
+	align-items: flex-end;
 
 	.refresher-content {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
+		justify-content: center;
+		padding-bottom: 20rpx;
+		height: 100%;
+		transition: transform 0.3s ease;
+
+		&.refreshing {
+			animation: pulse 1.5s ease-in-out infinite;
+		}
+
+		.loading-animation {
+			margin-bottom: 10rpx;
+
+			.spinner {
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				height: 40rpx;
+
+				.spinner-dot {
+					width: 15rpx;
+					height: 15rpx;
+					border-radius: 50%;
+					margin: 0 6rpx;
+					animation: dot-bounce 1.4s ease-in-out infinite both;
+
+					&:nth-child(1) {
+						background-color: #36cfc9;
+					}
+
+					&:nth-child(2) {
+						background-color: #f759ab;
+					}
+
+					&:nth-child(3) {
+						background-color: #999999;
+					}
+				}
+			}
+		}
 
 		.refresh-text {
-			font-size: 28rpx;
+			font-size: 24rpx;
 			color: #999999;
+			margin-top: 10rpx;
+			transition: color 0.3s ease;
 		}
 	}
 }
 
-/* 内容区域 */
 .content {
 	min-height: 100vh;
-	padding: 30rpx 30rpx;
+	padding: 30rpx;
 	box-sizing: border-box;
 }
 
-/* 搜索弹窗样式优化 */
 .search-popup-form {
 	width: 70vw;
-	/* 略微增加宽度 */
 	height: 100%;
 	background: #fff;
-	display: flex;
-	flex-direction: column;
 	padding: 48rpx 40rpx;
-	/* 增加内边距 */
 	box-sizing: border-box;
 
 	.form-container {
 		display: flex;
 		flex-direction: column;
 		gap: 48rpx;
-		/* 增加表单项间距 */
 
 		.form-item {
-			.item-lable {
+			.item-label {
 				font-size: 28rpx;
 				color: #666;
 				margin-bottom: 16rpx;
@@ -302,7 +318,6 @@ onUnmounted(() => {
 				background: #f8f8f8;
 				border-radius: 12rpx;
 				padding: 18rpx 26rpx;
-				border: 1rpx solid transparent;
 				transition: all 0.3s ease;
 
 				&:active {
@@ -310,15 +325,11 @@ onUnmounted(() => {
 					transform: scale(0.98);
 				}
 
-				.iconfont {
-					font-size: 32rpx;
-
-					&.icon-arrow {
-						color: #999;
-						font-size: 36rpx;
-						font-weight: bold;
-						transition: transform 0.3s ease;
-					}
+				.icon-arrow {
+					color: #999;
+					font-size: 36rpx;
+					font-weight: bold;
+					transition: transform 0.3s ease;
 				}
 
 				.item-text {
@@ -339,13 +350,11 @@ onUnmounted(() => {
 
 			&.date-picker .item-content {
 				background: #f0f7ff;
-				/* 日期选择器特殊背景色 */
-				border-color: #e6f0ff;
+				border: 1rpx solid #e6f0ff;
 			}
 
 			&.project-select .item-content:hover .icon-arrow {
 				transform: translateX(4rpx);
-				/* 悬停时箭头微动 */
 			}
 
 			&.query-action {
@@ -353,11 +362,11 @@ onUnmounted(() => {
 				display: flex;
 				justify-content: space-between;
 				gap: 24rpx;
+
 				.cancel-btn,
 				.query-btn {
 					height: 66rpx;
 					width: 150rpx;
-					// flex: 1;
 					display: flex;
 					justify-content: center;
 					align-items: center;
@@ -383,22 +392,6 @@ onUnmounted(() => {
 	}
 }
 
-/* 弹窗打开动画效果 - 可以在uni-popup上添加 */
-::v-deep .uni-popup__wrapper--right {
-	animation: slideInRight 0.3s ease;
-}
-
-@keyframes slideInRight {
-	from {
-		transform: translateX(100%);
-	}
-
-	to {
-		transform: translateX(0);
-	}
-}
-
-/* 底部提示 */
 .bottom-tips {
 	padding: 40rpx 0;
 	text-align: center;
@@ -406,7 +399,6 @@ onUnmounted(() => {
 	color: #cccccc;
 }
 
-/* 滚动到顶部按钮 */
 .scroll-to-top {
 	position: fixed;
 	right: 32rpx;
@@ -432,6 +424,47 @@ onUnmounted(() => {
 		font-size: 40rpx;
 		color: #ffffff;
 		font-weight: bold;
+	}
+}
+
+@keyframes dot-bounce {
+
+	0%,
+	80%,
+	100% {
+		transform: scale(0);
+		opacity: 0.6;
+	}
+
+	40% {
+		transform: scale(1);
+		opacity: 1;
+	}
+}
+
+@keyframes pulse {
+
+	0%,
+	100% {
+		opacity: 1;
+	}
+
+	50% {
+		opacity: 0.7;
+	}
+}
+
+::v-deep .uni-popup__wrapper--right {
+	animation: slideInRight 0.3s ease;
+}
+
+@keyframes slideInRight {
+	from {
+		transform: translateX(100%);
+	}
+
+	to {
+		transform: translateX(0);
 	}
 }
 </style>
