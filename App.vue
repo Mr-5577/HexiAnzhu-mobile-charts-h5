@@ -1,14 +1,14 @@
 <script>
 	export default {
 		onLaunch: function() {
-			console.log('App Launch')
+			// console.log('App Launch')
+			console.log('process.env.NODE_ENV:', process.env.NODE_ENV)
 		},
 		onShow: function() {
-			console.log('process.env.NODE_ENV:', process.env.NODE_ENV)
-			console.log('App Show')
+			// console.log('App Show')
 		},
 		onHide: function() {
-			console.log('App Hide')
+			// console.log('App Hide')
 		}
 	}
 </script>

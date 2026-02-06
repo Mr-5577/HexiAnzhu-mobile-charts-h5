@@ -30,7 +30,7 @@
                 <slot name="right">
                     <!-- 默认右侧内容 -->
                     <view v-if="showRight" class="home-btn" @click="goHome">
-                        <text class="iconfont icon-home">🏠</text>
+                        <uni-icons type="home" size="20" color="#333"></uni-icons>
                     </view>
                 </slot>
             </view>
@@ -142,7 +142,7 @@ const goHome = () => {
         top: 0;
         left: 0;
         right: 0;
-        z-index: 9999;
+        // z-index: 999;
     }
 
     .status-bar {
@@ -201,7 +201,7 @@ const goHome = () => {
             align-items: center;
             justify-content: center;
             text-align: center;
-            pointer-events: none;
+            // pointer-events: none;
             z-index: 0;
 
             // 默认情况：左右都有内容

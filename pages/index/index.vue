@@ -1,69 +1,21 @@
 <template>
 	<!-- 固定导航栏 -->
-	<custom-navbar title="首页" :show-back="false" fixed :backgroundColor="navbarBgColor" :title-color="navbarTitleColor"
-		:translucent="true" :border-bottom="showNavBorder" @home="handleHomeClick">
+	<custom-navbar title="数据驾驶舱" :show-back="false" fixed :backgroundColor="navbarBgColor"
+		:title-color="navbarTitleColor" :translucent="true" :border-bottom="showNavBorder">
 		<!-- 右侧自定义内容 -->
 		<template #right>
-			<view class="right-actions">
-				<text class="iconfont icon-search" @click="handleSearch">🔍</text>
+			<view @click="openSearchPopup">
+				<uni-icons type="search" size="20" color="#333" />
 			</view>
 		</template>
 	</custom-navbar>
 
 	<!-- 滚动内容区域 -->
-	<scroll-view class="scroll-container" scroll-y :refresher-enabled="true" :refresher-triggered="refresherTriggered"
-		refresher-background="#f8f8f8" @refresherrefresh="onRefresh" @scroll="onScroll" :show-scrollbar="false">
-		<!-- 下拉刷新区域 -->
-		<view class="refresher-container" v-if="refresherTriggered">
-			<view class="refresher-content">
-				<image v-if="!refreshComplete" src="/static/loading.gif" class="loading-icon"></image>
-				<text class="refresh-text">{{ refreshText }}</text>
-			</view>
-		</view>
-
+	<scroll-view class="scroll-container" :style="contentTopStyle" scroll-y :refresher-enabled="true"
+		:refresher-triggered="refresherTriggered" refresher-default-style="none" refresher-background="#fff"
+		@refresherrefresh="onRefresh" @scroll="onScroll" :show-scrollbar="false">
 		<!-- 主内容 -->
 		<view class="content">
-			<!-- 顶部占位 -->
-			<view class="content-top-placeholder" :style="contentTopStyle"></view>
-
-			<!-- Logo区域 -->
-			<view class="banner-section">
-				<image class="logo" src="/static/logo.png" mode="aspectFit"></image>
-				<text class="welcome-text">欢迎使用</text>
-				<text class="app-name">{{ appName }}</text>
-			</view>
-
-			<!-- 功能卡片 -->
-			<view class="card-section">
-				<view class="card-grid">
-					<view class="card-item" v-for="item in featureList" :key="item.id" @click="handleCardClick(item)">
-						<view class="card-icon">
-							<text class="iconfont" :class="item.icon">{{ item.iconText }}</text>
-						</view>
-						<text class="card-title">{{ item.title }}</text>
-						<text class="card-desc">{{ item.desc }}</text>
-					</view>
-				</view>
-			</view>
-
-			<!-- 列表内容 -->
-			<view class="list-section">
-				<view class="section-header">
-					<text class="section-title">最新动态</text>
-					<text class="section-more" @click="handleMore">查看更多 ></text>
-				</view>
-				<view class="news-list">
-					<view class="news-item" v-for="(news, index) in newsList" :key="index"
-						@click="handleNewsClick(news)">
-						<view class="news-left">
-							<text class="news-title">{{ news.title }}</text>
-							<text class="news-time">{{ news.time }}</text>
-						</view>
-						<image v-if="news.image" :src="news.image" class="news-image" mode="aspectFill"></image>
-					</view>
-				</view>
-			</view>
-
 			<!-- 底部提示 -->
 			<view class="bottom-tips" v-if="showBottomTips">
 				<text>—— 我是有底线的 ——</text>
@@ -75,40 +27,66 @@
 			</view>
 		</view>
 	</scroll-view>
+	<!-- 搜索弹窗组件 -->
+	<uni-popup ref="searchPopupRef" type="right" background-color="#fff" border-radius="15rpx 0 0 15rpx"
+		:is-mask-click="false">
+		<view class="search-popup-form">
+			<view class="form-container">
+				<!-- 项目选择 -->
+				<view class="form-item project-select">
+					<view class="item-lable">项目</view>
+					<view class="item-content" @click="showProjectSelect">
+						<text class="item-text" :class="{ 'placeholder': selectedProjects.length === 0 }">
+							{{ selectedProjects.length > 0 ? `${selectedProjects.length}个项目` : '选择项目' }}
+						</text>
+						<text class="iconfont icon-arrow">›</text>
+					</view>
+				</view>
+				<!-- 日期选择 -->
+				<view class="form-item date-picker">
+					<view class="item-lable">日期</view>
+					<picker mode="date" :value="dateTime" @change="bindTimeChange">
+						<view class="item-content">
+							<text class="item-text">{{ dateTime }}</text>
+						</view>
+					</picker>
+				</view>
+				<!-- 查询按钮 -->
+				<view class="form-item query-action">
+					<button class="cancel-btn" @click="closeSearchPop">
+						<text>取消</text>
+					</button>
+					<button class="query-btn">
+						<text>查询</text>
+					</button>
+				</view>
+			</view>
+		</view>
+	</uni-popup>
+	<!-- 项目选择弹窗组件 -->
+	<project-select-popup ref="projectSelectPopupRef" @confirm="handleProjectConfirm" />
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
 import CustomNavbar from '@/components/custom-navbar/custom-navbar.vue'
+import ProjectSelectPopup from './project-select-popup.vue'
+import dayjs from 'dayjs'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 
 // 响应式数据
-const title = ref('首页')
 const refresherTriggered = ref(false)
-const refreshComplete = ref(false)
-const refreshText = ref('下拉刷新')
 const scrollTop = ref(0)
 const showScrollTopBtn = ref(false)
 const showBottomTips = ref(false)
 const navbarBgColor = ref('rgba(255, 255, 255, 0)')
 const navbarTitleColor = ref('#ffffff')
 const showNavBorder = ref(false)
-const appName = ref('我的应用')
-
-// 功能列表数据
-const featureList = ref([
-	{ id: 1, title: '功能一', desc: '功能描述一', icon: 'icon-feature1', iconText: '⭐' },
-	{ id: 2, title: '功能二', desc: '功能描述二', icon: 'icon-feature2', iconText: '🚀' },
-	{ id: 3, title: '功能三', desc: '功能描述三', icon: 'icon-feature3', iconText: '💡' },
-	{ id: 4, title: '功能四', desc: '功能描述四', icon: 'icon-feature4', iconText: '🔧' }
-])
-
-// 新闻列表数据
-const newsList = ref([
-	{ id: 1, title: '系统更新通知', time: '2024-01-15', image: '' },
-	{ id: 2, title: '春节活动即将开启', time: '2024-01-14', image: '/static/news1.jpg' },
-	{ id: 3, title: '用户反馈报告', time: '2024-01-13', image: '' },
-	{ id: 4, title: '新功能上线公告', time: '2024-01-12', image: '/static/news2.jpg' }
-])
+const searchPopupRef = ref(null)
+// 创建模板引用
+const projectSelectPopupRef = ref(null)
+// 存储选中的项目
+const selectedProjects = ref([])
+const dateTime = ref('')
 
 // 计算内容区域顶部padding
 const contentTopStyle = computed(() => {
@@ -116,27 +94,20 @@ const contentTopStyle = computed(() => {
 	const statusBarHeight = info.statusBarHeight || 0
 	const navBarHeight = 44 // 导航栏内容高度
 	const totalHeight = statusBarHeight + navBarHeight
-
 	return {
-		height: totalHeight + 'px'
+		paddingTop: totalHeight + 'px'
 	}
 })
 
 // 下拉刷新
 const onRefresh = () => {
 	refresherTriggered.value = true
-	refreshText.value = '正在刷新...'
-	refreshComplete.value = false
 
 	// 模拟异步请求
 	setTimeout(() => {
-		refreshComplete.value = true
-		refreshText.value = '刷新成功'
-
+		uni.stopPullDownRefresh && uni.stopPullDownRefresh()
 		setTimeout(() => {
 			refresherTriggered.value = false
-			refreshText.value = '下拉刷新'
-			refreshComplete.value = false
 
 			// 这里可以更新数据
 			uni.showToast({
@@ -186,52 +157,47 @@ const scrollToTop = () => {
 	})
 	showScrollTopBtn.value = false
 }
-
-// 点击事件处理
-const handleHomeClick = () => {
-	console.log('点击首页按钮')
-	scrollToTop()
+// 打开搜索弹窗
+const openSearchPopup = () => {
+	console.log('1324354')
+	if (searchPopupRef.value) {
+		searchPopupRef.value.open()
+	}
 }
 
-const handleSearch = () => {
-	uni.navigateTo({
-		url: '/pages/search/search'
-	})
+// 打开项目选择弹窗
+const showProjectSelect = () => {
+	if (projectSelectPopupRef.value) {
+		// 调用子组件暴露的 openPopup 方法
+		projectSelectPopupRef.value.openPopup()
+	}
 }
 
-const handleMessage = () => {
-	uni.navigateTo({
-		url: '/pages/message/message'
-	})
-}
-
-const handleCardClick = (item) => {
+// 处理项目选择确认
+const handleProjectConfirm = (projects) => {
+	selectedProjects.value = projects
+	console.log('父组件收到选中的项目:', projects)
+	// 这里可以处理选中的项目数据
 	uni.showToast({
-		title: `点击了${item.title}`,
-		icon: 'none'
+		title: `已选择 ${projects.length} 个项目`,
+		icon: 'success'
 	})
 }
-
-const handleNewsClick = (news) => {
-	uni.navigateTo({
-		url: `/pages/news/detail?id=${news.id}`
-	})
+// 选择时间
+const bindTimeChange = (e) => {
+	dateTime.value = e.detail.value
 }
-
-const handleMore = () => {
-	uni.navigateTo({
-		url: '/pages/news/list'
-	})
+const closeSearchPop = () => {
+	if (searchPopupRef.value) {
+		searchPopupRef.value.close()
+	}
 }
-
 // 监听页面显示/隐藏
 onMounted(() => {
-	// 页面加载时的初始化
-	console.log('首页加载完成')
+	dateTime.value = dayjs().format('YYYY-MM-DD')
 })
 
 onUnmounted(() => {
-	// 清理工作
 })
 </script>
 
@@ -243,196 +209,157 @@ onUnmounted(() => {
 	box-sizing: border-box;
 }
 
-/* 下拉刷新样式 */
-.refresher-container {
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	padding: 30rpx 0;
-
-	.refresher-content {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-
-		.loading-icon {
-			width: 60rpx;
-			height: 60rpx;
-			margin-bottom: 20rpx;
-		}
-
-		.refresh-text {
-			font-size: 28rpx;
-			color: #999999;
-		}
-	}
-}
-
 /* 内容区域 */
 .content {
 	min-height: 100vh;
-	background: linear-gradient(180deg, #007AFF 0%, #F8F8F8 300rpx);
-
-	.content-top-placeholder {
-		width: 100%;
-	}
 }
 
-/* Banner区域 */
-.banner-section {
+/* 搜索弹窗样式优化 */
+.search-popup-form {
+	width: 70vw;
+	/* 略微增加宽度 */
+	height: 100%;
+	background: #fff;
 	display: flex;
 	flex-direction: column;
-	align-items: center;
-	padding: 60rpx 32rpx 80rpx;
-	color: #ffffff;
+	padding: 48rpx 40rpx;
+	/* 增加内边距 */
+	box-sizing: border-box;
 
-	.logo {
-		width: 180rpx;
-		height: 180rpx;
-		border-radius: 36rpx;
-		margin-bottom: 40rpx;
-		box-shadow: 0 20rpx 40rpx rgba(0, 0, 0, 0.1);
-	}
+	.form-container {
+		display: flex;
+		flex-direction: column;
+		gap: 48rpx;
+		/* 增加表单项间距 */
 
-	.welcome-text {
-		font-size: 32rpx;
-		margin-bottom: 16rpx;
-		opacity: 0.9;
-	}
-
-	.app-name {
-		font-size: 48rpx;
-		font-weight: bold;
-		margin-bottom: 20rpx;
-	}
-}
-
-/* 卡片区域 */
-.card-section {
-	background: transparent;
-	padding: 0 32rpx 40rpx;
-	margin-top: -40rpx;
-
-	.card-grid {
-		display: grid;
-		grid-template-columns: repeat(2, 1fr);
-		gap: 24rpx;
-
-		.card-item {
-			background: #ffffff;
-			border-radius: 24rpx;
-			padding: 40rpx 32rpx;
-			box-shadow: 0 10rpx 30rpx rgba(0, 0, 0, 0.08);
-			display: flex;
-			flex-direction: column;
-			align-items: center;
-			transition: all 0.3s ease;
-
-			&:active {
-				transform: scale(0.98);
-				box-shadow: 0 5rpx 15rpx rgba(0, 0, 0, 0.1);
+		.form-item {
+			.item-lable {
+				font-size: 28rpx;
+				color: #666;
+				margin-bottom: 16rpx;
+				font-weight: 500;
 			}
 
-			.card-icon {
-				width: 80rpx;
-				height: 80rpx;
-				border-radius: 50%;
-				background: linear-gradient(135deg, #007AFF, #00C6FF);
+			.item-content {
 				display: flex;
 				align-items: center;
-				justify-content: center;
-				margin-bottom: 24rpx;
+				justify-content: space-between;
+				background: #f8f8f8;
+				border-radius: 12rpx;
+				padding: 18rpx 26rpx;
+				border: 1rpx solid transparent;
+				transition: all 0.3s ease;
+
+				&:active {
+					background: #f0f0f0;
+					transform: scale(0.98);
+				}
 
 				.iconfont {
-					font-size: 40rpx;
-					color: #ffffff;
+					font-size: 32rpx;
+
+					&.icon-arrow {
+						color: #999;
+						font-size: 36rpx;
+						font-weight: bold;
+						transition: transform 0.3s ease;
+					}
+				}
+
+				.item-text {
+					font-size: 30rpx;
+					color: #333;
+					font-weight: 500;
+					flex: 1;
+					overflow: hidden;
+					text-overflow: ellipsis;
+					white-space: nowrap;
+
+					&.placeholder {
+						color: #999;
+						font-weight: normal;
+					}
 				}
 			}
 
-			.card-title {
-				font-size: 32rpx;
-				font-weight: 600;
-				color: #333333;
-				margin-bottom: 12rpx;
+			&.date-picker .item-content {
+				background: #f0f7ff;
+				/* 日期选择器特殊背景色 */
+				border-color: #e6f0ff;
 			}
 
-			.card-desc {
-				font-size: 26rpx;
-				color: #999999;
-				text-align: center;
-				line-height: 1.4;
+			&.project-select .item-content:hover .icon-arrow {
+				transform: translateX(4rpx);
+				/* 悬停时箭头微动 */
+			}
+
+			&.query-action {
+				margin-top: 64rpx;
+				/* 增加与上面元素的间距 */
+				display: flex;
+				justify-content: space-between;
+				gap: 24rpx;
+				/* 按钮间增加间距 */
+
+				.cancel-btn,
+				.query-btn {
+					flex: 1;
+					height: 88rpx;
+					/* 增加按钮高度 */
+					display: flex;
+					justify-content: center;
+					align-items: center;
+					font-size: 34rpx;
+					/* 增大字体 */
+					border-radius: 12rpx;
+					/* 统一圆角 */
+					font-weight: 500;
+					transition: all 0.3s ease;
+					border: none;
+
+					&:active {
+						transform: scale(0.96);
+					}
+				}
+
+				.cancel-btn {
+					background: #f8f8f8;
+					color: #666;
+					border: 1rpx solid #e0e0e0;
+
+					&:active {
+						background: #f0f0f0;
+					}
+				}
+
+				.query-btn {
+					background: linear-gradient(135deg, #007aff, #0056cc);
+					/* 渐变背景 */
+					color: #fff;
+					box-shadow: 0 8rpx 24rpx rgba(0, 122, 255, 0.3);
+
+					&:active {
+						background: linear-gradient(135deg, #0056cc, #004099);
+						box-shadow: 0 4rpx 16rpx rgba(0, 122, 255, 0.2);
+					}
+				}
 			}
 		}
 	}
 }
 
-/* 列表区域 */
-.list-section {
-	background: #ffffff;
-	border-radius: 40rpx 40rpx 0 0;
-	padding: 40rpx 32rpx;
-	margin-top: 20rpx;
+/* 弹窗打开动画效果 - 可以在uni-popup上添加 */
+::v-deep .uni-popup__wrapper--right {
+	animation: slideInRight 0.3s ease;
+}
 
-	.section-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		margin-bottom: 32rpx;
-
-		.section-title {
-			font-size: 36rpx;
-			font-weight: bold;
-			color: #333333;
-		}
-
-		.section-more {
-			font-size: 28rpx;
-			color: #007AFF;
-
-			&:active {
-				opacity: 0.7;
-			}
-		}
+@keyframes slideInRight {
+	from {
+		transform: translateX(100%);
 	}
 
-	.news-list {
-		.news-item {
-			display: flex;
-			justify-content: space-between;
-			align-items: center;
-			padding: 32rpx 0;
-			border-bottom: 1rpx solid #f0f0f0;
-
-			&:last-child {
-				border-bottom: none;
-			}
-
-			.news-left {
-				flex: 1;
-				margin-right: 32rpx;
-
-				.news-title {
-					font-size: 32rpx;
-					color: #333333;
-					margin-bottom: 12rpx;
-					display: -webkit-box;
-					-webkit-box-orient: vertical;
-					-webkit-line-clamp: 2;
-					overflow: hidden;
-				}
-
-				.news-time {
-					font-size: 26rpx;
-					color: #999999;
-				}
-			}
-
-			.news-image {
-				width: 160rpx;
-				height: 120rpx;
-				border-radius: 16rpx;
-			}
-		}
+	to {
+		transform: translateX(0);
 	}
 }
 
@@ -470,79 +397,6 @@ onUnmounted(() => {
 		font-size: 40rpx;
 		color: #ffffff;
 		font-weight: bold;
-	}
-}
-
-/* 右侧操作区域 */
-.right-actions {
-	display: flex;
-	align-items: center;
-
-	.iconfont {
-		font-size: 40rpx;
-		margin-left: 20rpx;
-		color: inherit;
-		position: relative;
-
-		&:active {
-			opacity: 0.7;
-		}
-
-		.message-badge {
-			position: absolute;
-			top: -10rpx;
-			right: -10rpx;
-			background: #ff3b30;
-			color: #ffffff;
-			font-size: 20rpx;
-			min-width: 32rpx;
-			height: 32rpx;
-			border-radius: 16rpx;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			padding: 0 8rpx;
-			font-weight: bold;
-		}
-	}
-}
-
-/* 暗色模式适配 */
-@media (prefers-color-scheme: dark) {
-	.scroll-container {
-		background-color: #000000;
-	}
-
-	.content {
-		background: linear-gradient(180deg, #007AFF 0%, #1a1a1a 300rpx);
-	}
-
-	.card-section .card-item {
-		background: #2a2a2a;
-
-		.card-title {
-			color: #ffffff;
-		}
-
-		.card-desc {
-			color: #999999;
-		}
-	}
-
-	.list-section {
-		background: #1a1a1a;
-
-		.section-title {
-			color: #ffffff;
-		}
-
-		.news-item {
-			border-bottom-color: #333333;
-
-			.news-title {
-				color: #ffffff;
-			}
-		}
 	}
 }
 </style>

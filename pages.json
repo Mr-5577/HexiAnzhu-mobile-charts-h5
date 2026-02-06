@@ -21,5 +21,11 @@
 		"rpxCalcBaseDeviceWidth": 375, // 开发设备宽度
 		"rpxCalcIncludeWidth": 750
 	},
-	"uniIdRouter": {}
+	"uniIdRouter": {},
+	"easycom": {
+    	"autoscan": true,
+		"custom": {
+			"^uni-(.*)": "@/uni_modules/uni-$1/uni-$1.vue"
+		}
+	}
 }
