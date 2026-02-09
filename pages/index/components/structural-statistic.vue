@@ -119,11 +119,13 @@ const staticChannelVisitData = [
 
 // 静态数据 - 渠道占比（成交）
 const staticChannelDealData = [
-    { name: '线上渠道', value: 30 },
-    { name: '中介推荐', value: 40 },
-    { name: '老带新', value: 18 },
-    { name: '自然到访', value: 10 },
-    { name: '其他', value: 2 }
+    { name: '全民营销', value: 36 },
+    { name: '内渠', value: 3 },
+    { name: '外渠分销', value: 37 },
+    { name: '工程抵款', value: 10 },
+    { name: '老带新', value: 3 },
+    { name: '自拓邀约', value: 12 },
+    { name: '自然到访', value: 5 },
 ]
 
 // 响应式数据
@@ -189,7 +191,11 @@ const chartOption = computed(() => {
 
     // 生成颜色数组
     const generateColors = () => {
-        const baseColors = ['#5470c6', '#91cc75', '#fac858', '#ee6666', '#73c0de', '#3ba272', '#fc8452', '#9a60b4']
+        const baseColors = [
+            '#5470c6', '#91cc75', '#fac858', '#ee6666',
+            '#73c0de', '#3ba272', '#fc8452', '#9a60b4',
+            '#ea7ccc', '#4da1ff', '#ff9f7f', '#8378ea'
+        ]
         return chartData.map((_, index) => baseColors[index % baseColors.length])
     }
 
@@ -238,8 +244,9 @@ const chartOption = computed(() => {
                 name: chartName.value,
                 type: 'pie',
                 radius: ['40%', '65%'],
-                center: ['50%', '45%'],
+                center: ['50%', '50%'],
                 avoidLabelOverlap: false,
+                minShowLabelAngle: 1, // 最小显示角度为1度
                 itemStyle: {
                     borderRadius: 6,
                     borderColor: '#fff',
@@ -253,6 +260,8 @@ const chartOption = computed(() => {
                     color: '#333',
                     fontSize: 11,
                     fontWeight: 'normal',
+                    // 添加minAngle: 0确保小数据也显示
+                    minAngle: 0, // 最小显示角度为1度
                     // 换行显示文字和数值比例
                     formatter: function (params) {
                         const percent = ((params.value / total) * 100).toFixed(1)
@@ -302,8 +311,8 @@ const chartOption = computed(() => {
                     }
                 },
                 labelLine: {
-                    length: 10,
-                    length2: 15,
+                    length: 8,
+                    length2: 12,
                     smooth: true
                 },
                 data: chartData.map((item, index) => ({
@@ -508,7 +517,7 @@ onUnmounted(() => {
 
     .chart-content {
         width: 100%;
-        height: 500rpx;
+        height: 550rpx;
 
         .chart-area {
             width: 100%;
