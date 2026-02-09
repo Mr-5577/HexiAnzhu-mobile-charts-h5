@@ -33,7 +33,12 @@
 			<view class="content">
 				<inventory></inventory>
 				<goal-achieved></goal-achieved>
-
+				<achievement-rate></achievement-rate>
+				<conversion-metrics></conversion-metrics>
+				<performance-trend></performance-trend>
+				<financial-statistics></financial-statistics>
+				<structural-statistic></structural-statistic>
+				<performance-ranking></performance-ranking>
 				<view class="bottom-tips" v-if="showBottomTips">
 					<text>—— 我是有底线的 ——</text>
 				</view>
@@ -42,7 +47,7 @@
 
 		<!-- 回到顶部按钮 -->
 		<view class="scroll-to-top" v-show="showScrollTopBtn" @click="scrollToTop">
-			<text class="iconfont icon-top">↑</text>
+			<uni-icons type="arrow-up" size="20" color="#fff" />
 		</view>
 	</view>
 
@@ -72,7 +77,7 @@
 
 				<view class="form-item query-action">
 					<button class="cancel-btn" @click="closeSearchPop">取消</button>
-					<button class="query-btn">查询</button>
+					<button class="query-btn" @click="handleSearch">查询</button>
 				</view>
 			</view>
 		</view>
@@ -87,6 +92,12 @@ import CustomNavbar from '@/components/custom-navbar/custom-navbar.vue'
 import ProjectSelectPopup from './project-select-popup.vue'
 import Inventory from './components/inventory.vue'
 import GoalAchieved from './components/goal-achieved.vue'
+import AchievementRate from './components/achievement-rate.vue'
+import ConversionMetrics from './components/conversion-metrics.vue'
+import PerformanceTrend from './components/performance-trend.vue'
+import FinancialStatistics from './components/financial-statistics.vue'
+import StructuralStatistic from './components/structural-statistic.vue'
+import PerformanceRanking from './components/performance-ranking.vue'
 import dayjs from 'dayjs'
 import { ref, computed, onMounted } from 'vue'
 
@@ -193,6 +204,7 @@ const scrollToTop = () => {
 // 搜索相关方法
 const openSearchPopup = () => searchPopupRef.value?.open()
 const closeSearchPop = () => searchPopupRef.value?.close()
+const handleSearch = () => searchPopupRef.value?.close()
 
 // 项目选择相关方法
 const showProjectSelect = () => projectSelectPopupRef.value?.openPopup()
@@ -237,7 +249,6 @@ onMounted(() => dateTime.value = dayjs().format('YYYY-MM-DD'))
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		padding-bottom: 20rpx;
 		height: 100%;
 		transition: transform 0.3s ease;
 
@@ -246,8 +257,6 @@ onMounted(() => dateTime.value = dayjs().format('YYYY-MM-DD'))
 		}
 
 		.loading-animation {
-			margin-bottom: 10rpx;
-
 			.spinner {
 				display: flex;
 				align-items: center;
@@ -272,6 +281,14 @@ onMounted(() => dateTime.value = dayjs().format('YYYY-MM-DD'))
 					&:nth-child(3) {
 						background-color: #999999;
 					}
+
+					&:nth-child(4) {
+						background-color: #fac858;
+					}
+
+					&:nth-child(5) {
+						background-color: #5470c6;
+					}
 				}
 			}
 		}
@@ -289,6 +306,9 @@ onMounted(() => dateTime.value = dayjs().format('YYYY-MM-DD'))
 	min-height: 100vh;
 	padding: 30rpx;
 	box-sizing: border-box;
+	gap: 30rpx;
+	display: flex;
+	flex-direction: column;
 }
 
 .search-popup-form {
@@ -333,8 +353,8 @@ onMounted(() => dateTime.value = dayjs().format('YYYY-MM-DD'))
 				}
 
 				.item-text {
-					font-size: 30rpx;
-					color: #333;
+					font-size: 28rpx;
+					color: #666;
 					font-weight: 500;
 					flex: 1;
 					overflow: hidden;
@@ -365,27 +385,26 @@ onMounted(() => dateTime.value = dayjs().format('YYYY-MM-DD'))
 
 				.cancel-btn,
 				.query-btn {
-					height: 66rpx;
-					width: 150rpx;
+					height: 56rpx;
+					width: 130rpx;
 					display: flex;
 					justify-content: center;
 					align-items: center;
-					font-size: 30rpx;
+					font-size: 28rpx;
 					border-radius: 12rpx;
-					font-weight: 500;
 					transition: all 0.3s ease;
-					&:active {
-						transform: scale(0.96);
-					}
 				}
+
 				.cancel-btn {
 					background: #f8f8f8;
 					color: #666;
+					border: 1rpx solid #eee;
 				}
+
 				.query-btn {
-					background: linear-gradient(135deg, #36cfc9 0%, #f759ab 100%);
+					// background: linear-gradient(135deg, #36cfc9 0%, #f759ab 100%);
+					background: linear-gradient(135deg, #409eff 0%, #626aef 100%);
 					color: #fff;
-					box-shadow: 0 8rpx 24rpx rgba(0, 122, 255, 0.3);
 				}
 			}
 		}
@@ -402,29 +421,18 @@ onMounted(() => dateTime.value = dayjs().format('YYYY-MM-DD'))
 .scroll-to-top {
 	position: fixed;
 	right: 32rpx;
-	bottom: 150rpx;
-	width: 88rpx;
-	height: 88rpx;
+	bottom: 100rpx;
+	width: 70rpx;
+	height: 70rpx;
 	border-radius: 50%;
-	background: rgba(0, 122, 255, 0.9);
+	// background: linear-gradient(135deg, #f06292 0%, #ff8a80 100%);
+	background: linear-gradient(135deg, #409eff 0%, #626aef 100%);
 	backdrop-filter: blur(10rpx);
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	box-shadow: 0 10rpx 30rpx rgba(0, 122, 255, 0.3);
 	z-index: 999;
 	transition: all 0.3s ease;
-
-	&:active {
-		transform: scale(0.95);
-		background: rgba(0, 122, 255, 1);
-	}
-
-	.icon-top {
-		font-size: 40rpx;
-		color: #ffffff;
-		font-weight: bold;
-	}
 }
 
 @keyframes dot-bounce {

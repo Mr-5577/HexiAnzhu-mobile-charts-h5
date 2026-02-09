@@ -1,5 +1,5 @@
+<!-- 目标达成统计 -->
 <template>
-    <!-- 目标达成统计 -->
     <view class="goal-achieved">
         <view class="goal-contant">
             <!-- 卡片标题 -->
@@ -115,13 +115,16 @@ onUnmounted(() => {
 <style lang="scss" scoped>
 .goal-achieved {
     width: 100%;
-    background-color: #fff;
+    // background-color: #fff;
+    background: linear-gradient(135deg,
+            rgba(255, 255, 255, 0.95) 0%,
+            rgba(250, 240, 250, 0.95) 100%);
     border-radius: 12rpx;
 }
 
 .goal-contant {
     width: 100%;
-    background: rgba(255, 255, 255, 0.85);
+    // background: rgba(255, 255, 255, 0.85);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     padding: 20rpx;
@@ -135,7 +138,6 @@ onUnmounted(() => {
         inset 0 1rpx 0 rgba(255, 255, 255, 0.9),
         inset 0 -1rpx 0 rgba(200, 220, 240, 0.1);
 
-    border: 1rpx solid rgba(255, 255, 255, 0.5);
     position: relative;
     overflow: hidden;
 
@@ -148,27 +150,32 @@ onUnmounted(() => {
         border-bottom: 1rpx solid rgba(224, 247, 250, 0.4);
         position: relative;
         z-index: 1;
-
-        &::after {
-            content: '';
-            position: absolute;
-            bottom: -10rpx;
-            left: 4rpx;
-            width: 60rpx;
-            height: 2rpx;
-            background: linear-gradient(90deg, #4facfe, #fa709a);
-            border-radius: 2rpx;
-        }
     }
 
     .goal-title {
         font-size: 30rpx;
         font-weight: 700;
-        background: linear-gradient(135deg, #4facfe 0%, #fa709a 100%);
+        // background: linear-gradient(135deg, #4facfe 0%, #fa709a 100%);
+        background: linear-gradient(135deg, #409eff 0%, #626aef 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
         letter-spacing: 1rpx;
+        position: relative;
+        padding-left: 16rpx;
+
+        &::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 55%;
+            transform: translateY(-50%);
+            width: 6rpx;
+            height: 28rpx;
+            // background: linear-gradient(135deg, #4FACFE, #FA709A);
+            background: linear-gradient(135deg, #409eff, #626aef);
+            border-radius: 3rpx;
+        }
     }
 
     /* 时间筛选器样式  */
@@ -196,24 +203,24 @@ onUnmounted(() => {
         position: relative;
         cursor: pointer;
         white-space: nowrap;
-        min-width: 50rpx;
+        min-width: 40rpx;
         text-align: center;
         height: 36rpx;
         line-height: 36rpx;
         display: flex;
         align-items: center;
         justify-content: center;
-
+        border-radius: 15rpx;
         &.active {
             color: #ffffff;
-            background: linear-gradient(135deg,
-                    rgba(79, 172, 254, 0.9) 0%,
-                    rgba(250, 112, 154, 0.9) 100%);
+            // background: linear-gradient(135deg,
+            //         rgba(79, 172, 254, 0.9) 0%,
+            //         rgba(250, 112, 154, 0.9) 100%);
+            background: linear-gradient(135deg, #409eff 0%, #626aef 100%);
             font-weight: 600;
             box-shadow:
                 0 2rpx 6rpx rgba(79, 172, 254, 0.3),
                 inset 0 1rpx 0 rgba(255, 255, 255, 0.3);
-            border-radius: 16rpx;
             padding: 0 14rpx;
         }
     }
@@ -323,7 +330,7 @@ onUnmounted(() => {
     width: 100%;
     padding: 20rpx;
     box-sizing: border-box;
-    background: rgba(255, 255, 255, 0.85);
+    // background: rgba(255, 255, 255, 0.85);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border-radius: 12rpx;
@@ -358,6 +365,7 @@ onUnmounted(() => {
 
     .premium-item {
         margin-bottom: 14rpx;
+
         &:last-child {
             margin-bottom: 0;
         }
@@ -403,6 +411,7 @@ onUnmounted(() => {
     }
 
     .amount-type {
+
         /* 金额类型 - 蓝色系 */
         .value-number {
             font-size: 32rpx;
