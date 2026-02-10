@@ -59,10 +59,10 @@
 				<view class="form-item project-select">
 					<view class="item-label">项目</view>
 					<view class="item-content" @click="showProjectSelect">
-						<text class="item-text" :class="{ 'placeholder': selectedProjects.length === 0 }">
-							{{ selectedProjects.length > 0 ? `${selectedProjects.length}个项目` : '选择项目' }}
+						<text class="item-text" :class="{ 'placeholder': selectedIds.length === 0 }">
+							{{ selectedIds.length > 0 ? `${selectedIds.length}个项目` : '选择项目' }}
 						</text>
-						<text class="iconfont icon-arrow">›</text>
+						<uni-icons type="right" size="16" color="#999" />
 					</view>
 				</view>
 
@@ -84,7 +84,7 @@
 	</uni-popup>
 
 	<!-- 项目选择弹窗组件 -->
-	<project-select-popup ref="projectSelectPopupRef" @confirm="handleProjectConfirm" />
+	<project-select-popup ref="projectSelectPopupRef" :selectedIds="selectedIds" @confirm="handleProjectConfirm" />
 </template>
 
 <script setup>
@@ -117,8 +117,8 @@ const navbarTitleColor = ref('#ffffff')
 const showNavBorder = ref(false)
 const searchPopupRef = ref(null)
 const projectSelectPopupRef = ref(null)
-const selectedProjects = ref([])
-const dateTime = ref('')
+const selectedIds = ref([]) // 选中的项目ID集合
+const dateTime = ref('') // 选中的时间日期
 
 // 计算内容区域顶部padding
 const contentTopStyle = computed(() => {
@@ -145,7 +145,7 @@ const onRefresh = () => {
 		}, 1000)
 	}, 1500)
 }
-
+// 自定义下拉刷新控件被下拉
 const onPulling = (e) => {
 	isPulling.value = true
 	const height = e.detail.deltaY
@@ -159,7 +159,7 @@ const onPulling = (e) => {
 		refreshText.value = '下拉刷新'
 	}
 }
-
+// 自定义下拉刷新被复位
 const onRestore = () => {
 	if (!refresherTriggered.value) {
 		setTimeout(() => {
@@ -188,10 +188,9 @@ const onScroll = (e) => {
 		loadMoreData()
 	}
 }
-
 const loadMoreData = () => console.log('加载更多数据...')
 
-// 滚动到顶部
+// 回到顶部
 const scrollToTop = () => {
 	scrollTopVal.value = scrollTop.value
 	// 通过nextTick确保scroll-top值被重置时能触发滚动
@@ -208,9 +207,8 @@ const handleSearch = () => searchPopupRef.value?.close()
 
 // 项目选择相关方法
 const showProjectSelect = () => projectSelectPopupRef.value?.openPopup()
-const handleProjectConfirm = (projects) => {
-	selectedProjects.value = projects
-	uni.showToast({ title: `已选择 ${projects.length} 个项目`, icon: 'success' })
+const handleProjectConfirm = (projectIds) => {
+	selectedIds.value = projectIds
 }
 
 // 日期选择
@@ -325,7 +323,7 @@ onMounted(() => dateTime.value = dayjs().format('YYYY-MM-DD'))
 
 		.form-item {
 			.item-label {
-				font-size: 28rpx;
+				font-size: 30rpx;
 				color: #666;
 				margin-bottom: 16rpx;
 				font-weight: 500;
@@ -339,17 +337,11 @@ onMounted(() => dateTime.value = dayjs().format('YYYY-MM-DD'))
 				border-radius: 12rpx;
 				padding: 18rpx 26rpx;
 				transition: all 0.3s ease;
+				border: 1rpx solid #e6f0ff;
 
 				&:active {
 					background: #f0f0f0;
 					transform: scale(0.98);
-				}
-
-				.icon-arrow {
-					color: #999;
-					font-size: 36rpx;
-					font-weight: bold;
-					transition: transform 0.3s ease;
 				}
 
 				.item-text {
@@ -373,10 +365,6 @@ onMounted(() => dateTime.value = dayjs().format('YYYY-MM-DD'))
 				border: 1rpx solid #e6f0ff;
 			}
 
-			&.project-select .item-content:hover .icon-arrow {
-				transform: translateX(4rpx);
-			}
-
 			&.query-action {
 				margin-top: 50rpx;
 				display: flex;
@@ -385,8 +373,8 @@ onMounted(() => dateTime.value = dayjs().format('YYYY-MM-DD'))
 
 				.cancel-btn,
 				.query-btn {
-					height: 56rpx;
-					width: 130rpx;
+					height: 60rpx;
+					width: 150rpx;
 					display: flex;
 					justify-content: center;
 					align-items: center;
@@ -398,7 +386,6 @@ onMounted(() => dateTime.value = dayjs().format('YYYY-MM-DD'))
 				.cancel-btn {
 					background: #f8f8f8;
 					color: #666;
-					border: 1rpx solid #eee;
 				}
 
 				.query-btn {

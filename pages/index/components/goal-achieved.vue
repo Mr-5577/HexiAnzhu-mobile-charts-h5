@@ -89,7 +89,7 @@ const activeTime = ref('month')
 const goalData = ref([
     { label: '来访(组)', value: '70/110', percent: 64, color: '#79bbf5' },
     { label: '认购(套)', value: '123/456', percent: 27, color: '#f77ca1' },
-    { label: '签约(套)', value: '123/789', percent: 16, color: '#64f796' },
+    { label: '签约(套)', value: '123/789', percent: 16, color: '#91cc75' },
     { label: '回款(万)', value: '9999/7894', percent: 127, color: '#ff9a9e' }
 ])
 
@@ -192,25 +192,25 @@ onUnmounted(() => {
         overflow: hidden;
         white-space: nowrap;
         height: 44rpx;
+        gap: 15rpx;
     }
 
     .time-item {
-        padding: 0 10rpx;
+        padding: 0 14rpx;
         font-size: 22rpx;
         font-weight: 500;
-        color: #8a9ba8;
+        color: #626aef;
         transition: all 0.2s ease;
         position: relative;
-        cursor: pointer;
         white-space: nowrap;
         min-width: 40rpx;
-        text-align: center;
         height: 36rpx;
         line-height: 36rpx;
         display: flex;
         align-items: center;
         justify-content: center;
         border-radius: 15rpx;
+        background: rgba(239, 240, 253, 0.5);
         &.active {
             color: #ffffff;
             // background: linear-gradient(135deg,

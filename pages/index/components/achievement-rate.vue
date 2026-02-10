@@ -451,28 +451,25 @@ defineExpose({
             0 2rpx 18rpx rgba(224, 247, 250, 0.15),
             inset 0 1rpx 0 rgba(255, 255, 255, 0.6);
         height: 44rpx;
+        gap: 15rpx;
     }
 
     .time-item {
-        padding: 0 10rpx;
+        padding: 0 14rpx;
         font-size: 22rpx;
         font-weight: 500;
-        color: #8A9BA8;
+        color: #626aef;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         position: relative;
-        cursor: pointer;
         white-space: nowrap;
         min-width: 40rpx;
-        text-align: center;
         height: 36rpx;
         line-height: 36rpx;
         display: flex;
         align-items: center;
         justify-content: center;
-        border-radius: 22rpx;
-        margin: 0 2rpx;
         border-radius: 15rpx;
-
+        background: rgba(239, 240, 253, 0.5);
         &.active {
             color: #FFFFFF;
             // background: linear-gradient(135deg,

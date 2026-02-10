@@ -243,7 +243,7 @@ const chartOption = computed(() => {
             {
                 name: chartName.value,
                 type: 'pie',
-                radius: ['40%', '65%'],
+                radius: ['35%', '55%'],
                 center: ['50%', '50%'],
                 avoidLabelOverlap: false,
                 minShowLabelAngle: 1, // 最小显示角度为1度

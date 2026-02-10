@@ -53,8 +53,8 @@
 import { ref, computed } from 'vue'
 
 const CHART_TYPES = ref([
-    { label: '项目月度', value: '1' },
-    { label: '个人月度', value: '2' },
+    { label: '项目月度排名', value: '1' },
+    { label: '个人月度排名', value: '2' },
 ])
 
 // 静态数据 - 项目月度业绩排名
@@ -261,24 +261,25 @@ const handleRowClick = (item) => {
             overflow: hidden;
             white-space: nowrap;
             height: 44rpx;
+            gap: 15rpx;
         }
 
         .type-item {
             padding: 0 14rpx;
             font-size: 22rpx;
             font-weight: 500;
-            color: #8a9ba8;
+            color: #626aef;
             transition: all 0.3s ease;
-            cursor: pointer;
             white-space: nowrap;
             min-width: 50rpx;
-            text-align: center;
             height: 36rpx;
             line-height: 36rpx;
             display: flex;
             align-items: center;
             justify-content: center;
             border-radius: 16rpx;
+
+            background: rgba(239, 240, 253, 0.5);
 
             &.active {
                 color: #ffffff;

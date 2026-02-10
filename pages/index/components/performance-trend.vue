@@ -529,26 +529,25 @@ onUnmounted(() => {
             overflow: hidden;
             white-space: nowrap;
             height: 44rpx;
+            gap: 15rpx;
         }
 
         .type-item {
             padding: 0 10rpx;
             font-size: 22rpx;
             font-weight: 500;
-            color: #8a9ba8;
+            color: #626aef;
             transition: all 0.2s ease;
             position: relative;
-            cursor: pointer;
             white-space: nowrap;
             min-width: 50rpx;
-            text-align: center;
             height: 36rpx;
             line-height: 36rpx;
             display: flex;
             align-items: center;
             justify-content: center;
             border-radius: 15rpx;
-
+            background: rgba(239, 240, 253, 0.5);
             &.active {
                 color: #ffffff;
                 // background: linear-gradient(135deg,
