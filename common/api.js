@@ -77,9 +77,3 @@ export const largeScreenApi = {
     return post("/sale/getCustomerComeInfo", data);
   },
 };
-
-// 导出所有API
-export default {
-  userApi: userApi,
-  largeScreenApi: largeScreenApi,
-};
