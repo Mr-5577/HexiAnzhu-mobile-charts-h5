@@ -31,14 +31,21 @@
 
 			<!-- 主内容 -->
 			<view class="content">
-				<inventory></inventory>
-				<goal-achieved></goal-achieved>
-				<achievement-rate></achievement-rate>
-				<conversion-metrics></conversion-metrics>
-				<performance-trend></performance-trend>
-				<financial-statistics></financial-statistics>
-				<structural-statistic></structural-statistic>
-				<performance-ranking></performance-ranking>
+				<!-- 渠道及转化 -->
+				<achievement-rate ref="achievementRateRef" :projectIds="projectIds"
+					:dateTime="dateTime"></achievement-rate>
+				<!-- 目标达成统计 -->
+				<goal-achieved :projectIds="projectIds" :dateTime="dateTime"></goal-achieved>
+				<!-- 业绩走势情况 -->
+				<performance-trend :projectIds="projectIds" :dateTime="dateTime"></performance-trend>
+				<!-- 转化指标情况 -->
+				<conversion-metrics :projectIds="projectIds" :dateTime="dateTime"></conversion-metrics>
+				<!-- 业务指标 -->
+				<financial-statistics :projectIds="projectIds" :dateTime="dateTime"></financial-statistics>
+				<!-- 资产与应收统计 -->
+				<structural-statistic :projectIds="projectIds" :dateTime="dateTime"></structural-statistic>
+				<!-- 业绩排名统计 -->
+				<performance-ranking :projectIds="projectIds" :dateTime="dateTime"></performance-ranking>
 				<view class="bottom-tips" v-if="showBottomTips">
 					<text>—— 我是有底线的 ——</text>
 				</view>
@@ -59,8 +66,8 @@
 				<view class="form-item project-select">
 					<view class="item-label">项目</view>
 					<view class="item-content" @click="showProjectSelect">
-						<text class="item-text" :class="{ 'placeholder': selectedIds.length === 0 }">
-							{{ selectedIds.length > 0 ? `${selectedIds.length}个项目` : '选择项目' }}
+						<text class="item-text" :class="{ 'placeholder': projectIds.length === 0 }">
+							{{ projectIds.length > 0 ? `${projectIds.length}个项目` : '选择项目' }}
 						</text>
 						<uni-icons type="right" size="16" color="#999" />
 					</view>
@@ -84,29 +91,29 @@
 	</uni-popup>
 
 	<!-- 项目选择弹窗组件 -->
-	<project-select-popup ref="projectSelectPopupRef" :selectedIds="selectedIds" @confirm="handleProjectConfirm" />
+	<project-select-popup ref="projectSelectPopupRef" :projectList="projectList" :selectedIds="projectIds"
+		@confirm="handleProjectConfirm" />
 </template>
 
 <script setup>
 import CustomNavbar from '@/components/custom-navbar/custom-navbar.vue'
-import ProjectSelectPopup from './project-select-popup.vue'
-import Inventory from './components/inventory.vue'
-import GoalAchieved from './components/goal-achieved.vue'
-import AchievementRate from './components/achievement-rate.vue'
-import ConversionMetrics from './components/conversion-metrics.vue'
-import PerformanceTrend from './components/performance-trend.vue'
-import FinancialStatistics from './components/financial-statistics.vue'
-import StructuralStatistic from './components/structural-statistic.vue'
-import PerformanceRanking from './components/performance-ranking.vue'
+import ProjectSelectPopup from '@/pages/index/project-select-popup.vue'
+import GoalAchieved from '@/pages/index/components/goal-achieved.vue'
+import AchievementRate from '@/pages/index/components/achievement-rate.vue'
+import ConversionMetrics from '@/pages/index/components/conversion-metrics.vue'
+import PerformanceTrend from '@/pages/index/components/performance-trend.vue'
+import FinancialStatistics from '@/pages/index/components/financial-statistics.vue'
+import StructuralStatistic from '@/pages/index/components/structural-statistic.vue'
+import PerformanceRanking from '@/pages/index/components/performance-ranking.vue'
 import dayjs from 'dayjs'
 import { ref, computed, onMounted } from 'vue'
+import { largeScreenApi } from '@/common/api.js'
 
 // 响应式数据
 const isReadyToRefresh = ref(false)
 const pullHeight = ref(0)
 const isPulling = ref(false)
 const refresherTriggered = ref(false)
-const refreshComplete = ref(false)
 const refreshText = ref('下拉刷新')
 const scrollTop = ref(0)
 const scrollTopVal = ref(0) // 用于控制scroll-view滚动位置
@@ -117,8 +124,11 @@ const navbarTitleColor = ref('#ffffff')
 const showNavBorder = ref(false)
 const searchPopupRef = ref(null)
 const projectSelectPopupRef = ref(null)
-const selectedIds = ref([]) // 选中的项目ID集合
+const projectList = ref([])
+const projectIds = ref([]) // 选中的项目ID集合
 const dateTime = ref('') // 选中的时间日期
+// 子组件ref
+const achievementRateRef = ref(null);
 
 // 计算内容区域顶部padding
 const contentTopStyle = computed(() => {
@@ -128,22 +138,39 @@ const contentTopStyle = computed(() => {
 })
 
 // 下拉刷新相关方法
-const onRefresh = () => {
+const onRefresh = async () => {
 	refresherTriggered.value = true
 	refreshText.value = '正在刷新...'
-	refreshComplete.value = false
-
-	setTimeout(() => {
-		refreshComplete.value = true
+	try {
+		// 刷新重置查询条件为初始值
+		dateTime.value = dayjs().format('YYYY-MM-DD')
+		await getProjectData()
 		refreshText.value = '刷新成功'
-		uni.showToast({ title: '刷新成功', icon: 'success', duration: 1500 })
-
+		// uni.showToast({
+		// 	title: '刷新成功',
+		// 	icon: 'success',
+		// 	duration: 1000
+		// })
+		setTimeout(() => {
+			// 手动触发子组件加载数据
+			refreshAllComponents();
+		}, 100);
+	} catch (error) {
+		refreshText.value = '刷新失败'
+		uni.showToast({
+			title: '刷新失败',
+			icon: 'error',
+			duration: 1500
+		})
+	} finally {
+		// 无论成功失败，延迟关闭刷新状态
 		setTimeout(() => {
 			refresherTriggered.value = false
-			refreshComplete.value = false
-			refreshText.value = '下拉刷新'
-		}, 1000)
-	}, 1500)
+			setTimeout(() => {
+				refreshText.value = '下拉刷新'
+			}, 300)
+		}, 1500)
+	}
 }
 // 自定义下拉刷新控件被下拉
 const onPulling = (e) => {
@@ -203,19 +230,51 @@ const scrollToTop = () => {
 // 搜索相关方法
 const openSearchPopup = () => searchPopupRef.value?.open()
 const closeSearchPop = () => searchPopupRef.value?.close()
-const handleSearch = () => searchPopupRef.value?.close()
+const handleSearch = () => {
+	searchPopupRef.value?.close()
+	refreshAllComponents()
+}
 
 // 项目选择相关方法
 const showProjectSelect = () => projectSelectPopupRef.value?.openPopup()
-const handleProjectConfirm = (projectIds) => {
-	selectedIds.value = projectIds
+const handleProjectConfirm = (selectedIds) => {
+	projectIds.value = selectedIds
 }
 
 // 日期选择
 const bindTimeChange = (e) => dateTime.value = e.detail.value
-
+// 获取项目数据
+const getProjectData = async () => {
+	const result = await largeScreenApi.getProjTree()
+	if (result.code === 200) {
+		const list = result.data || []
+		projectList.value = list
+		projectIds.value = list.map((item => {
+			return item.id
+		}))
+	}
+}
+// 统一刷新所有子组件
+const refreshAllComponents = () => {
+	const components = [
+		achievementRateRef.value,
+	];
+	components.forEach((component) => {
+		if (component && typeof component.refreshData === "function") {
+			component.refreshData();
+		}
+	});
+};
 // 生命周期
-onMounted(() => dateTime.value = dayjs().format('YYYY-MM-DD'))
+onMounted(async () => {
+	dateTime.value = dayjs().format('YYYY-MM-DD')
+	// 先加载项目数据再请求子组件数据
+	await getProjectData()
+	setTimeout(() => {
+		// 手动触发子组件加载数据
+		refreshAllComponents();
+	}, 100);
+})
 </script>
 
 <style lang="scss" scoped>

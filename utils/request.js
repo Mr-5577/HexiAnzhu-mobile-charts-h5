@@ -57,7 +57,11 @@ const request = (options = {}) => {
     const requestConfig = {
       url: baseConfig.baseURL + options.url,
       method: options.method || "GET",
-      data: options.data || {},
+      // data: options.data || {},
+      data: {
+        isQueryFast: true, // 默认接口加速
+        ...options?.data,
+      },
       timeout: options.timeout || baseConfig.timeout,
       dataType: options.dataType || "json",
       header: {
@@ -104,7 +108,9 @@ const request = (options = {}) => {
       },
     };
     // 添加token
-    const token = uni.getStorageSync("token") || "";
+    // const token = uni.getStorageSync("token") || "";
+    const token =
+      "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOjE1LCJ1c2VybmFtZSI6IjAwMDAxNSIsImlhdCI6MTc3MDg1OTY4NCwiZXhwIjoxNzcwOTQ2MDg0fQ.-1rkaeCyT7iYQn8eC9hUi2IJfrND-w_vPdf_V3cEZw4";
     if (token) {
       requestConfig.header.Authorization = `Bearer ${token}`;
     }

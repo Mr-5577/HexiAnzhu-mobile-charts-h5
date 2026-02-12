@@ -33,9 +33,9 @@ const staticYearData = [
     { syearMonth: '2023-07', orderNum: 345, signNum: 312, collectMoney: 5210 },
     { syearMonth: '2023-08', orderNum: 398, signNum: 356, collectMoney: 5980 },
     { syearMonth: '2023-09', orderNum: 356, signNum: 321, collectMoney: 5340 },
-    { syearMonth: '2023-10', orderNum: 421, signNum: 389, collectMoney: 6340 },
-    { syearMonth: '2023-11', orderNum: 467, signNum: 432, collectMoney: 7010 },
-    { syearMonth: '2023-12', orderNum: 512, signNum: 478, collectMoney: 7680 }
+    { syearMonth: '2023-10', orderNum: 216, signNum: 389, collectMoney: 6340 },
+    { syearMonth: '2023-11', orderNum: 187, signNum: 432, collectMoney: 7010 },
+    { syearMonth: '2023-12', orderNum: 312, signNum: 478, collectMoney: 7680 }
 ]
 
 // 静态数据 - 近30天来访数据

@@ -385,6 +385,7 @@ onUnmounted(() => {
         flex-wrap: wrap;
         transition: all 0.3s ease;
         border-radius: 8rpx;
+        margin-left: 10rpx;
     }
 
     /* 不同类型数值的区分样式 */

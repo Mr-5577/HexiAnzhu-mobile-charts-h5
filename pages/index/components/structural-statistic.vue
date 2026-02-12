@@ -245,7 +245,9 @@ const chartOption = computed(() => {
                 type: 'pie',
                 radius: ['35%', '55%'],
                 center: ['50%', '50%'],
-                avoidLabelOverlap: false,
+                avoidLabelOverlap: true, // 让echarts处理重叠
+                // 添加最小角度，确保小数据能显示
+                minAngle: 1, // 最小1度
                 minShowLabelAngle: 1, // 最小显示角度为1度
                 itemStyle: {
                     borderRadius: 6,
@@ -254,14 +256,19 @@ const chartOption = computed(() => {
                 },
                 label: {
                     show: true,
-                    position: 'outer',
+                    position: 'outside',
                     alignTo: 'labelLine',
                     bleedMargin: 5,
                     color: '#333',
                     fontSize: 11,
                     fontWeight: 'normal',
-                    // 添加minAngle: 0确保小数据也显示
-                    minAngle: 0, // 最小显示角度为1度
+                    // 添加minAngle: 0  确保小数据也显示
+                    minAngle: 0,
+                    overflow: 'break', // 确保不省略任何标签
+                    // 确保不隐藏任何标签
+                    hideOverlap: false,
+                    // 确保小角度也能显示
+                    minAngle: 0.1,
                     // 换行显示文字和数值比例
                     formatter: function (params) {
                         const percent = ((params.value / total) * 100).toFixed(1)
@@ -280,23 +287,6 @@ const chartOption = computed(() => {
                             lineHeight: 11
                         }
                     },
-                    // 一行显示文字和数值比例
-                    // formatter: function (params) {
-                    //     const percent = ((params.value / total) * 100).toFixed(1)
-                    //     return `{a|${params.name}} {b|${params.value}(${percent}%)}`
-                    // },
-                    // rich: {
-                    //     a: {
-                    //         fontSize: 11,
-                    //         color: '#333',
-                    //         fontWeight: 'bold'
-                    //     },
-                    //     b: {
-                    //         fontSize: 11,
-                    //         color: '#666',
-                    //         padding: [0, 0, 0, 8]
-                    //     }
-                    // },
                 },
                 emphasis: {
                     label: {
@@ -311,6 +301,7 @@ const chartOption = computed(() => {
                     }
                 },
                 labelLine: {
+                    show: true,
                     length: 8,
                     length2: 12,
                     smooth: true
@@ -465,7 +456,7 @@ onUnmounted(() => {
                 font-size: 24rpx;
                 color: #666;
                 background: rgba(239, 240, 253, 0.5);
-                border-radius: 14rpx;
+                border-radius: 24rpx;
                 transition: all 0.3s ease;
                 border: 1rpx solid transparent;
 
@@ -498,7 +489,7 @@ onUnmounted(() => {
                     font-size: 22rpx;
                     color: #626aef;
                     background: rgba(239, 240, 253, 0.5);
-                    border-radius: 12rpx;
+                    border-radius: 30rpx;
                     transition: all 0.3s ease;
                     border: 1rpx solid transparent;
 

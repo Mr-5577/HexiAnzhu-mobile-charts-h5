@@ -100,7 +100,7 @@ const secondColumnItems = computed(() => statisticsItems.value.slice(3, 6))
 // 根据类型获取颜色
 const getColorByType = (type) => {
     const colors = {
-        cycle: '#36cfc9',
+        cycle: '#91cc75',
         sign: '#f06292',
         forfeit: '#5470c6',
         receivable: '#fac858',
@@ -112,7 +112,6 @@ const getColorByType = (type) => {
 </script>
 
 <style lang="scss" scoped>
-/* 主容器 - 更紧凑的版本 */
 .h5-statistics-two-column {
     width: 100%;
     background: linear-gradient(135deg,

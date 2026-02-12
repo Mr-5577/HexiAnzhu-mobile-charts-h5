@@ -2,7 +2,7 @@
 <template>
     <view class="conversion-metrics">
         <view class="metrics-header">
-            <text class="metrics-title">目标达成统计</text>
+            <text class="metrics-title">转化指标情况</text>
         </view>
         <view class="echarts-info">
             <view class="info-left">
