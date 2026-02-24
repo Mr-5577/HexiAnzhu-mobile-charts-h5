@@ -42,12 +42,30 @@
         <view class="chart-content">
             <div ref="structuralRef" class="chart-area"></div>
         </view>
+        <!-- 遮罩层组件 -->
+        <loading-mask :visible="loading" text="加载中..." />
     </view>
 </template>
 
 <script setup>
 import { ref, shallowRef, onMounted, onUnmounted, computed, nextTick } from 'vue'
 import * as echarts from 'echarts'
+import LoadingMask from '@/components/loading-mask/loading-mask.vue'
+import dayjs from 'dayjs'
+import { largeScreenApi } from '@/common/api.js'
+
+const props = defineProps({
+    // 选择的项目ID
+    projectIds: {
+        type: Array,
+        default: () => []
+    },
+    // 选择的时间日期
+    dateTime: {
+        type: String,
+        default: ''
+    }
+})
 
 // 常量定义
 const SWITCH_TYPE_LIST = [
@@ -68,104 +86,64 @@ const CHANNEL_SUB_TYPES = [
     { value: 'deal', label: '成交' }
 ]
 
-// 静态数据 - 库存结构（按时间维度）
-const staticInventoryTimeData = [
-    { name: '6个月内', value: 45 },
-    { name: '6-12个月', value: 28 },
-    { name: '1-2年', value: 18 },
-    { name: '2年以上', value: 9 }
-]
-
-// 静态数据 - 库存结构（按面积维度）
-const staticInventoryAreaData = [
-    { name: '90㎡以下', value: 32 },
-    { name: '90-120㎡', value: 45 },
-    { name: '120-140㎡', value: 15 },
-    { name: '140㎡以上', value: 8 }
-]
-
-// 静态数据 - 库存结构（按总价维度）
-const staticInventoryPriceData = [
-    { name: '150万以下', value: 25 },
-    { name: '150-300万', value: 40 },
-    { name: '300-500万', value: 20 },
-    { name: '500万以上', value: 15 }
-]
-
-// 静态数据 - 库存结构（按业态维度）
-const staticInventoryFormatData = [
-    { name: '住宅', value: 65 },
-    { name: '商业', value: 20 },
-    { name: '办公', value: 10 },
-    { name: '车位', value: 5 }
-]
-
-// 静态数据 - 应收账龄
-const staticReceivableData = [
-    { name: '3个月内', value: 50 },
-    { name: '3-6个月', value: 25 },
-    { name: '6-12个月', value: 15 },
-    { name: '1年以上', value: 10 }
-]
-
-// 静态数据 - 渠道占比（来访）
-const staticChannelVisitData = [
-    { name: '线上渠道', value: 35 },
-    { name: '中介推荐', value: 25 },
-    { name: '老带新', value: 20 },
-    { name: '自然到访', value: 15 },
-    { name: '其他', value: 5 }
-]
-
-// 静态数据 - 渠道占比（成交）
-const staticChannelDealData = [
-    { name: '全民营销', value: 36 },
-    { name: '内渠', value: 3 },
-    { name: '外渠分销', value: 37 },
-    { name: '工程抵款', value: 10 },
-    { name: '老带新', value: 3 },
-    { name: '自拓邀约', value: 12 },
-    { name: '自然到访', value: 5 },
-]
-
 // 响应式数据
 const loading = ref(false)
+// 防止重复请求
+const isRequesting = ref(false)
 const chartType = ref('1')
 const inventoryType = ref('time')
 const channelType = ref('visit')
 const chartInstance = shallowRef(null)
 const structuralRef = ref(null)
+const apiRawData = ref([[], [], [], [], [], [], []])
 
 // 当前图表数据计算
 const currentChartData = computed(() => {
+    let listData = []
     switch (chartType.value) {
         case '1': // 库存结构
             switch (inventoryType.value) {
                 case 'time':
-                    return staticInventoryTimeData
+                    listData = apiRawData.value[0]
+                    break
                 case 'area':
-                    return staticInventoryAreaData
+                    listData = apiRawData.value[1]
+                    break
                 case 'allPrice':
-                    return staticInventoryPriceData
+                    listData = apiRawData.value[2]
+                    break
                 case 'format':
-                    return staticInventoryFormatData
+                    listData = apiRawData.value[3]
+                    break
                 default:
-                    return staticInventoryTimeData
+                    break
             }
+            break
         case '2': // 应收账龄
-            return staticReceivableData
+            listData = apiRawData.value[4]
+            break
         case '3': // 渠道占比
             switch (channelType.value) {
                 case 'visit':
-                    return staticChannelVisitData
+                    listData = apiRawData.value[5]
+                    break
                 case 'deal':
-                    return staticChannelDealData
+                    listData = apiRawData.value[6]
+                    break
                 default:
-                    return staticChannelVisitData
+                    break
             }
+            break
         default:
-            return staticInventoryTimeData
+            break
     }
+    // 转换为饼图数据格式
+    return listData
+        .filter((item) => item && item.groupName)
+        .map((item) => ({
+            value: item.roomCount || 0,
+            name: item.groupName || "未知数据",
+        }));
 })
 
 // 图表名称
@@ -246,8 +224,6 @@ const chartOption = computed(() => {
                 radius: ['35%', '55%'],
                 center: ['50%', '50%'],
                 avoidLabelOverlap: true, // 让echarts处理重叠
-                // 添加最小角度，确保小数据能显示
-                minAngle: 1, // 最小1度
                 minShowLabelAngle: 1, // 最小显示角度为1度
                 itemStyle: {
                     borderRadius: 6,
@@ -267,12 +243,10 @@ const chartOption = computed(() => {
                     overflow: 'break', // 确保不省略任何标签
                     // 确保不隐藏任何标签
                     hideOverlap: false,
-                    // 确保小角度也能显示
-                    minAngle: 0.1,
                     // 换行显示文字和数值比例
                     formatter: function (params) {
                         const percent = ((params.value / total) * 100).toFixed(1)
-                        return `{a|${params.name}}\n{b|${params.value}(${percent}%)}`
+                        return `{a|${params.name}}\n {b|${params.value}(${percent}%)}`
                     },
                     rich: {
                         a: {
@@ -282,7 +256,7 @@ const chartOption = computed(() => {
                             lineHeight: 18
                         },
                         b: {
-                            fontSize: 11,
+                            fontSize: 10,
                             color: '#666',
                             lineHeight: 11
                         }
@@ -302,8 +276,8 @@ const chartOption = computed(() => {
                 },
                 labelLine: {
                     show: true,
-                    length: 8,
-                    length2: 12,
+                    length: 10,  // 引导线第一段长度
+                    length2: 14,  // 引导线第二段长度
                     smooth: true
                 },
                 data: chartData.map((item, index) => ({
@@ -349,55 +323,98 @@ const handleResize = () => {
 // 切换图表类型
 const handleChartTypeChange = (type) => {
     if (chartType.value === type) return
-
-    loading.value = true
     chartType.value = type
-
-    // 延迟更新，模拟数据加载
-    setTimeout(() => {
-        initChart()
-        loading.value = false
-    }, 300)
+    updateChart()
 }
 
 // 切换库存类型
 const handleInventoryTypeChange = (type) => {
     if (inventoryType.value === type) return
-
-    loading.value = true
     inventoryType.value = type
-
-    setTimeout(() => {
-        updateChart()
-        loading.value = false
-    }, 200)
+    updateChart()
 }
 
 // 切换渠道类型
 const handleChannelTypeChange = (type) => {
     if (channelType.value === type) return
-
-    loading.value = true
     channelType.value = type
-
-    setTimeout(() => {
-        updateChart()
-        loading.value = false
-    }, 200)
+    updateChart()
 }
+// 获取数据
+const fetchData = async () => {
+    if (isRequesting.value) return;
+
+    const { dateTime, projectIds } = props;
+    if (!dateTime || projectIds.length === 0) {
+        // 如果没有必要参数，清空数据
+        apiRawData.value = [[], [], [], [], [], [], []];
+        nextTick(() => {
+            updateChart();
+        });
+        return;
+    }
+    const params = {
+        projIds: projectIds,
+        type: 1, // 0:年  1:月  2:周  3:日
+        day: `${dateTime} 00:00:00`,
+        beginDate: dayjs(dateTime).startOf("month").format("YYYY-MM-DD") + " 00:00:00",
+        endDate: dayjs(dateTime).endOf("month").format("YYYY-MM-DD") + " 23:59:59",
+    };
+    try {
+        loading.value = true;
+        isRequesting.value = true;
+
+        const res = await largeScreenApi.getRoomStockGroupInfo(params);
+        if (res.code === 200) {
+            // 存储API原始数据 - 确保是7个数组
+            const data = Array.isArray(res.data) ? res.data : [];
+            apiRawData.value = [
+                data[0] || [], // 库存结构-时间
+                data[1] || [], // 库存结构-面积
+                data[2] || [], // 库存结构-总价
+                data[3] || [], // 库存结构-业态
+                data[4] || [], // 应收账龄
+                data[5] || [], // 渠道占比-来访
+                data[6] || [], // 渠道占比-成交
+            ];
+
+            // 确保图表已初始化
+            if (!chartInstance.value) {
+                initChart();
+            } else {
+                nextTick(() => {
+                    updateChart();
+                });
+            }
+        }
+    } catch (error) {
+        console.error("获取数据失败:", error);
+        apiRawData.value = [[], [], [], [], [], [], []];
+        nextTick(() => {
+            updateChart();
+        });
+    } finally {
+        loading.value = false;
+        isRequesting.value = false;
+    }
+};
 
 // 生命周期
 onMounted(() => {
     window.addEventListener('resize', handleResize)
-
-    nextTick(() => {
-        initChart()
-    })
+    // nextTick(() => {
+    //     initChart()
+    // })
 })
 
 onUnmounted(() => {
     window.removeEventListener('resize', handleResize)
     disposeChart()
+})
+
+// 暴露方法给父组件
+defineExpose({
+    refreshData: fetchData
 })
 </script>
 
@@ -410,7 +427,7 @@ onUnmounted(() => {
     border-radius: 14rpx;
     box-sizing: border-box;
     padding: 20rpx 20rpx;
-    box-sizing: border-box;
+    position: relative;
 
     .chart-header {
         margin-bottom: 24rpx;

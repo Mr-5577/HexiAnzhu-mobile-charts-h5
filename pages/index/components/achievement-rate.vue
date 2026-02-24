@@ -1,14 +1,6 @@
 <!-- 渠道及转化 -->
 <template>
     <view class="achievement-rate-container">
-        <!-- loading遮罩层 -->
-        <view v-if="loading" class="loading-mask">
-            <view class="loading-content">
-                <view class="loading-spinner"></view>
-                <uni-icons type="spinner-cycle" size="24" color="#409eff" />
-                <text class="loading-text">加载中...</text>
-            </view>
-        </view>
         <!-- 卡片标题 -->
         <view class="achievement-header">
             <text class="achievement-title">渠道及转化</text>
@@ -50,6 +42,8 @@
         </view>
         <!-- 雷达图 -->
         <view :id="chartId" class="echarts-chart"></view>
+        <!-- 遮罩层组件 -->
+        <loading-mask :visible="loading" text="加载中..." />
     </view>
 </template>
 
@@ -57,6 +51,7 @@
 import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import * as echarts from 'echarts'
 import dayjs from 'dayjs'
+import LoadingMask from '@/components/loading-mask/loading-mask.vue'
 import { largeScreenApi } from '@/common/api.js'
 import { formatNumber } from '@/utils/common.js'
 // 定义 props
@@ -85,6 +80,8 @@ const chartId = ref(`radar-chart-${Date.now()}`)
 let chartInstance = null
 // loading状态
 const loading = ref(false)
+// 防止重复请求
+const isRequesting = ref(false)
 // 库存数据
 const inventoryData = ref({
     roomNum: 0, // 房间库存数量
@@ -151,6 +148,7 @@ const chartOptions = ref({
         },
         min: 0,
         max: 100,
+        // alignTicks: false, // 刻度是否对齐，默认true
         axisName: {
             color: '#666', // 文字颜色
             fontSize: 12,
@@ -266,7 +264,8 @@ const chartOptions = ref({
     animationEasing: 'cubicOut'
 })
 // 初始化图表
-const initChart = () => {
+const initChart = async () => {
+    await nextTick()
     setTimeout(() => {
         const chartDom = document.getElementById(chartId.value)
         if (!chartDom) return
@@ -295,9 +294,12 @@ const handleResize = () => {
 // 获取数据
 const fetchData = async () => {
     if (!props.projectIds?.length) return
+    // 检查是否已有请求在进行
+    if (isRequesting.value) return;
     // 重置数据到初始状态
     resetData()
     loading.value = true
+    isRequesting.value = true
     try {
         // 库存数据
         const endTime = dayjs(props.dateTime).subtract(1, 'month').endOf('month').format('YYYY-MM-DD')
@@ -358,12 +360,11 @@ const fetchData = async () => {
 
         // 更新图表
         updateChartData()
-        loading.value = false
     } catch (error) {
         console.error('获取数据失败:', error)
-        loading.value = false
     } finally {
         loading.value = false
+        isRequesting.value = false
     }
 }
 // 格式化百分比函数
@@ -419,6 +420,8 @@ onUnmounted(() => {
         chartInstance.dispose()
         chartInstance = null
     }
+    isRequesting.value = false
+    loading.value = false
 })
 
 // 暴露方法给父组件
@@ -440,38 +443,6 @@ defineExpose({
     box-sizing: border-box;
     position: relative;
     overflow: hidden;
-
-    /* loading遮罩层样式 */
-    .loading-mask {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(255, 255, 255, 0.1);
-        /* 加大模糊，更柔和 */
-        backdrop-filter: blur(4px);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 9999;
-        border-radius: 20rpx;
-
-        .loading-content {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 30rpx 40rpx;
-            border-radius: 16rpx;
-
-            .loading-text {
-                font-size: 24rpx;
-                color: #409eff;
-                font-weight: 500;
-            }
-        }
-    }
 
     /* 卡片标题区域 */
     .achievement-header {

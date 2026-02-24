@@ -11,7 +11,8 @@
                 :stroke-dasharray="`${progressCircumference} ${circumference}`" transform="rotate(-90, 100, 100)" />
         </svg>
         <view class="ring-content">
-            <text class="ring-value">{{ progress }}%</text>
+            <text class="ring-value" v-if="isFixed">{{ fixedProgress }}%</text>
+            <text class="ring-value" v-if="!isFixed">{{ progress }}%</text>
             <text class="ring-label">{{ label }}</text>
         </view>
     </view>
@@ -20,10 +21,20 @@
 <script setup>
 import { computed } from 'vue'
 const props = defineProps({
-    // 进度比例值
+    // 是否固定比例值
+    isFixed: {
+        type: Boolean,
+        default: false
+    },
+    // 固定比例值
+    fixedProgress: {
+        type: [Number, String],
+        default: 0
+    },
+    // 动态进度比例值
     progress: {
         type: Number,
-        default: 75
+        default: 65
     },
     // 文本
     label: {

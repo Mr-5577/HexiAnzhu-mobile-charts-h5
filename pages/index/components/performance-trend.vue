@@ -11,69 +11,40 @@
             </view>
         </view>
         <div ref="chartDom" class="chart-area"></div>
+        <!-- 遮罩层组件 -->
+        <loading-mask :visible="loading" text="加载中..." />
     </view>
 </template>
 
 <script setup>
 import { ref, shallowRef, onMounted, onUnmounted, computed, nextTick } from 'vue'
 import * as echarts from 'echarts'
+import LoadingMask from '@/components/loading-mask/loading-mask.vue'
+import dayjs from 'dayjs'
+import { largeScreenApi } from '@/common/api.js'
 
+const props = defineProps({
+    // 选择的项目ID
+    projectIds: {
+        type: Array,
+        default: () => []
+    },
+    // 选择的时间日期
+    dateTime: {
+        type: String,
+        default: ''
+    }
+})
 const CHART_TYPES = ref([
     { label: '近一年业绩走势', value: 'year' },
     { label: '近三十天来访趋势', value: 'month' },
 ])
-// 静态数据 - 近一年业绩数据
-const staticYearData = [
-    { syearMonth: '2023-01', orderNum: 156, signNum: 145, collectMoney: 2450 },
-    { syearMonth: '2023-02', orderNum: 108, signNum: 167, collectMoney: 2890 },
-    { syearMonth: '2023-03', orderNum: 234, signNum: 210, collectMoney: 3560 },
-    { syearMonth: '2023-04', orderNum: 178, signNum: 245, collectMoney: 4120 },
-    { syearMonth: '2023-05', orderNum: 162, signNum: 287, collectMoney: 4780 },
-    { syearMonth: '2023-06', orderNum: 289, signNum: 265, collectMoney: 4320 },
-    { syearMonth: '2023-07', orderNum: 345, signNum: 312, collectMoney: 5210 },
-    { syearMonth: '2023-08', orderNum: 398, signNum: 356, collectMoney: 5980 },
-    { syearMonth: '2023-09', orderNum: 356, signNum: 321, collectMoney: 5340 },
-    { syearMonth: '2023-10', orderNum: 216, signNum: 389, collectMoney: 6340 },
-    { syearMonth: '2023-11', orderNum: 187, signNum: 432, collectMoney: 7010 },
-    { syearMonth: '2023-12', orderNum: 312, signNum: 478, collectMoney: 7680 }
-]
-
-// 静态数据 - 近30天来访数据
-const staticDayData = [
-    { comeDate: '2024-01-01', comeNum: 45 },
-    { comeDate: '2024-01-02', comeNum: 52 },
-    { comeDate: '2024-01-03', comeNum: 48 },
-    { comeDate: '2024-01-04', comeNum: 56 },
-    { comeDate: '2024-01-05', comeNum: 61 },
-    { comeDate: '2024-01-06', comeNum: 73 },
-    { comeDate: '2024-01-07', comeNum: 82 },
-    { comeDate: '2024-01-08', comeNum: 58 },
-    { comeDate: '2024-01-09', comeNum: 49 },
-    { comeDate: '2024-01-10', comeNum: 55 },
-    { comeDate: '2024-01-11', comeNum: 63 },
-    { comeDate: '2024-01-12', comeNum: 68 },
-    { comeDate: '2024-01-13', comeNum: 79 },
-    { comeDate: '2024-01-14', comeNum: 85 },
-    { comeDate: '2024-01-15', comeNum: 57 },
-    { comeDate: '2024-01-16', comeNum: 51 },
-    { comeDate: '2024-01-17', comeNum: 59 },
-    { comeDate: '2024-01-18', comeNum: 64 },
-    { comeDate: '2024-01-19', comeNum: 71 },
-    { comeDate: '2024-01-20', comeNum: 83 },
-    { comeDate: '2024-01-21', comeNum: 90 },
-    { comeDate: '2024-01-22', comeNum: 61 },
-    { comeDate: '2024-01-23', comeNum: 54 },
-    { comeDate: '2024-01-24', comeNum: 62 },
-    { comeDate: '2024-01-25', comeNum: 67 },
-    { comeDate: '2024-01-26', comeNum: 74 },
-    { comeDate: '2024-01-27', comeNum: 86 },
-    { comeDate: '2024-01-28', comeNum: 92 },
-    { comeDate: '2024-01-29', comeNum: 65 },
-    { comeDate: '2024-01-30', comeNum: 58 }
-]
+// loading状态
+const loading = ref(false)
+// 防止重复请求
+const isRequesting = ref(false)
 
 // 响应式数据
-const loading = ref(false)
 const chartType = ref('year')
 const chartInstance = shallowRef(null)
 const chartDom = ref(null)
@@ -94,7 +65,11 @@ const chartDayData = ref({
 // 计算最大值
 const paymentMax = computed(() => {
     const validData = chartData.value.payment.filter(v => v != null)
-    return validData.length ? Math.max(...validData, 100) : 100
+    // return validData.length ? Math.max(...validData, 100) : 100
+    if (validData.length === 0) return 10  // 没有数据时显示合理范围
+    // 取最大值并向上取整到10的倍数，留一些空间
+    const max = Math.max(...validData)
+    return Math.ceil(max / 10) * 10
 })
 
 const setMax = computed(() => {
@@ -173,9 +148,7 @@ const chartOption = computed(() => {
                     // 横坐标标签显示优化
                     interval: getLabelInterval(chartData.value.dates.length),
                     formatter: function (value) {
-                        const [year, month] = value.split('-')
-                        // 只显示月份
-                        return `${year}${month}`
+                        return value
                     }
                 }
             },
@@ -397,26 +370,67 @@ const handleResize = () => {
         chartInstance.value.resize()
     }
 }
+const resetData = () => {
+    chartData.value = { dates: [], subscription: [], signing: [], payment: [] };
+    chartDayData.value = { xData: [], yData: [] };
+};
+// 获取请求参数
+const getRequestParams = () => {
+    const isYear = chartType.value === "year";
+    const endTime = dayjs(props.dateTime)
+        .subtract(isYear ? 1 : 1, isYear ? "month" : "day")
+        .endOf(isYear ? "month" : "day")
+        .format("YYYY-MM-DD");
 
-// 数据处理
+    const startDate = dayjs(endTime)
+        .subtract(isYear ? 1 : 30, isYear ? "year" : "day")
+        .format("YYYY-MM-DD");
+
+    return {
+        projIds: props.projectIds,
+        type: 0, // 0:年  1:月  2:周  3:日
+        day: `${props.dateTime} 00:00:00`,
+        beginDate: `${startDate} 00:00:00`,
+        endDate: `${endTime} 23:59:59`,
+    };
+};
+// 切换类型
 const handleChartTypeChange = (type) => {
     if (chartType.value === type) return
-
-    // 模拟加载状态
-    loading.value = true
     chartType.value = type
-
-    // 延迟更新，模拟数据加载
-    setTimeout(() => {
-        if (type === 'year') {
-            processYearData(staticYearData)
-        } else {
-            processDayData(staticDayData)
-        }
-        initChart()
-        loading.value = false
-    }, 300)
+    fetchData()
 }
+// 请求数据
+const fetchData = async () => {
+    // 检查是否已有请求在进行
+    if (isRequesting.value) return;
+    loading.value = true;
+    isRequesting.value = true;
+    resetData();
+    try {
+        const params = getRequestParams();
+        if (chartType.value === "year") {
+            const res = await largeScreenApi.getSaleYearInfo(params);
+            if (res.code === 200) {
+                processYearData(res.data || []);
+            }
+        } else {
+            const res = await largeScreenApi.getCustomerCome30Day(params);
+            if (res.code === 200) {
+                processDayData(res.data || []);
+            }
+        }
+        if (chartDom.value) {
+            await nextTick()
+            initChart()
+        }
+    } catch (error) {
+        console.error("获取数据失败:", error);
+    } finally {
+        loading.value = false;
+        isRequesting.value = false;
+    }
+};
 
 const processYearData = (dataList) => {
     const result = {
@@ -425,49 +439,41 @@ const processYearData = (dataList) => {
         signing: [],
         payment: []
     }
-
     dataList.forEach(item => {
         result.dates.push(item.syearMonth)
         result.subscription.push(item.orderNum || 0)
         result.signing.push(item.signNum || 0)
         result.payment.push(item.collectMoney || 0)
     })
-
     chartData.value = result
 }
 
 const processDayData = (listData) => {
     const xData = []
     const yData = []
-
     listData.forEach(item => {
         xData.push(item.comeDate)
         yData.push(item.comeNum || 0)
     })
-
     chartDayData.value = { xData, yData }
-}
-
-// 初始化数据
-const initData = () => {
-    processYearData(staticYearData)
 }
 
 // 生命周期
 onMounted(() => {
-    // 监听窗口变化
     window.addEventListener('resize', handleResize)
-
-    // 初始化
-    nextTick(() => {
-        initData()
-        initChart()
-    })
+    // nextTick(() => {
+    //     fetchData()
+    // })
 })
 
 onUnmounted(() => {
     window.removeEventListener('resize', handleResize)
     disposeChart()
+})
+
+// 暴露方法给父组件
+defineExpose({
+    refreshData: fetchData
 })
 </script>
 
@@ -480,6 +486,7 @@ onUnmounted(() => {
     border-radius: 12rpx;
     padding: 20rpx 20rpx;
     box-sizing: border-box;
+    position: relative;
 
     .performance-header {
         display: flex;
@@ -548,6 +555,7 @@ onUnmounted(() => {
             justify-content: center;
             border-radius: 15rpx;
             background: rgba(239, 240, 253, 0.5);
+
             &.active {
                 color: #ffffff;
                 // background: linear-gradient(135deg,
@@ -556,7 +564,7 @@ onUnmounted(() => {
                 background: linear-gradient(135deg, #409eff 0%, #626aef 100%);
                 font-weight: 600;
                 box-shadow: 0 2rpx 6rpx rgba(79, 172, 254, 0.3),
-                inset 0 1rpx 0 rgba(255, 255, 255, 0.3);
+                    inset 0 1rpx 0 rgba(255, 255, 255, 0.3);
                 padding: 0rpx 14rpx;
             }
         }

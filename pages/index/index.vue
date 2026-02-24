@@ -35,17 +35,17 @@
 				<achievement-rate ref="achievementRateRef" :projectIds="projectIds"
 					:dateTime="dateTime"></achievement-rate>
 				<!-- 目标达成统计 -->
-				<goal-achieved :projectIds="projectIds" :dateTime="dateTime"></goal-achieved>
+				<goal-achieved ref="goalAchievedRef" :projectIds="projectIds" :dateTime="dateTime"></goal-achieved>
 				<!-- 业绩走势情况 -->
-				<performance-trend :projectIds="projectIds" :dateTime="dateTime"></performance-trend>
+				<performance-trend ref="performanceTrendRef" :projectIds="projectIds" :dateTime="dateTime"></performance-trend>
 				<!-- 转化指标情况 -->
-				<conversion-metrics :projectIds="projectIds" :dateTime="dateTime"></conversion-metrics>
+				<conversion-metrics ref="conversionMetricsRef" :projectIds="projectIds" :dateTime="dateTime"></conversion-metrics>
 				<!-- 业务指标 -->
-				<financial-statistics :projectIds="projectIds" :dateTime="dateTime"></financial-statistics>
+				<financial-statistics ref="financialStatisticsRef" :projectIds="projectIds" :dateTime="dateTime"></financial-statistics>
 				<!-- 资产与应收统计 -->
-				<structural-statistic :projectIds="projectIds" :dateTime="dateTime"></structural-statistic>
+				<structural-statistic ref="structuralStatisticRef" :projectIds="projectIds" :dateTime="dateTime"></structural-statistic>
 				<!-- 业绩排名统计 -->
-				<performance-ranking :projectIds="projectIds" :dateTime="dateTime"></performance-ranking>
+				<performance-ranking ref="performanceRankingRef" :projectIds="projectIds" :dateTime="dateTime"></performance-ranking>
 				<view class="bottom-tips" v-if="showBottomTips">
 					<text>—— 我是有底线的 ——</text>
 				</view>
@@ -129,6 +129,12 @@ const projectIds = ref([]) // 选中的项目ID集合
 const dateTime = ref('') // 选中的时间日期
 // 子组件ref
 const achievementRateRef = ref(null);
+const goalAchievedRef = ref(null);
+const performanceTrendRef = ref(null);
+const conversionMetricsRef = ref(null);
+const financialStatisticsRef = ref(null);
+const structuralStatisticRef = ref(null);
+const performanceRankingRef = ref(null);
 
 // 计算内容区域顶部padding
 const contentTopStyle = computed(() => {
@@ -145,7 +151,7 @@ const onRefresh = async () => {
 		// 刷新重置查询条件为初始值
 		dateTime.value = dayjs().format('YYYY-MM-DD')
 		await getProjectData()
-		refreshText.value = '刷新成功'
+		refreshText.value = '刷新成功,正在请求数据...'
 		// uni.showToast({
 		// 	title: '刷新成功',
 		// 	icon: 'success',
@@ -258,6 +264,12 @@ const getProjectData = async () => {
 const refreshAllComponents = () => {
 	const components = [
 		achievementRateRef.value,
+		goalAchievedRef.value,
+		performanceTrendRef.value,
+		conversionMetricsRef.value,
+		financialStatisticsRef.value,
+		structuralStatisticRef.value,
+		performanceRankingRef.value,
 	];
 	components.forEach((component) => {
 		if (component && typeof component.refreshData === "function") {
@@ -477,7 +489,7 @@ onMounted(async () => {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	z-index: 999;
+	z-index: 10;
 	transition: all 0.3s ease;
 }
 

@@ -41,56 +41,43 @@
             </view>
         </scroll-view>
 
-        <!-- 加载状态 -->
-        <view v-if="loading" class="loading-state">
-            <view class="loading-spinner"></view>
-            <text class="loading-text">加载中...</text>
-        </view>
+        <!-- 遮罩层组件 -->
+        <loading-mask :visible="loading" text="加载中..." />
     </view>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
+import LoadingMask from '@/components/loading-mask/loading-mask.vue'
+import dayjs from 'dayjs'
+import { largeScreenApi } from '@/common/api.js'
+
+const props = defineProps({
+    // 选择的项目ID
+    projectIds: {
+        type: Array,
+        default: () => []
+    },
+    // 选择的时间日期
+    dateTime: {
+        type: String,
+        default: ''
+    }
+})
 
 const CHART_TYPES = ref([
     { label: '项目月度排名', value: '1' },
     { label: '个人月度排名', value: '2' },
 ])
 
-// 静态数据 - 项目月度业绩排名
-const staticProjectData = [
-    { sort: 1, projName: '北京项目', signNum: 145, orderNum: 156, collectMoney: 2450, totalRate: 0.85 },
-    { sort: 2, projName: '上海项目', signNum: 132, orderNum: 140, collectMoney: 2300, totalRate: 0.78 },
-    { sort: 3, projName: '广州项目', signNum: 120, orderNum: 125, collectMoney: 2100, totalRate: 0.75 },
-    { sort: 4, projName: '深圳项目', signNum: 110, orderNum: 115, collectMoney: 1950, totalRate: 0.72 },
-    { sort: 5, projName: '杭州项目', signNum: 98, orderNum: 105, collectMoney: 1800, totalRate: 0.68 },
-    { sort: 6, projName: '成都项目', signNum: 85, orderNum: 92, collectMoney: 1650, totalRate: 0.65 },
-    { sort: 7, projName: '重庆项目', signNum: 76, orderNum: 80, collectMoney: 1500, totalRate: 0.62 },
-    { sort: 8, projName: '武汉项目', signNum: 65, orderNum: 70, collectMoney: 1350, totalRate: 0.58 },
-    { sort: 9, projName: '南京项目', signNum: 55, orderNum: 60, collectMoney: 1200, totalRate: 0.55 },
-    { sort: 10, projName: '西安项目', signNum: 45, orderNum: 50, collectMoney: 1050, totalRate: 0.52 }
-]
-
-// 静态数据 - 个人月度业绩排名
-const staticPersonalData = [
-    { sort: 1, sortProj: 1, projName: '北京项目', salerName: '张三', orderNum: 45 },
-    { sort: 2, sortProj: 1, projName: '北京项目', salerName: '李四', orderNum: 38 },
-    { sort: 3, sortProj: 2, projName: '上海项目', salerName: '王五', orderNum: 36 },
-    { sort: 4, sortProj: 1, projName: '北京项目', salerName: '赵六', orderNum: 32 },
-    { sort: 5, sortProj: 3, projName: '广州项目', salerName: '孙七', orderNum: 30 },
-    { sort: 6, sortProj: 2, projName: '上海项目', salerName: '周八', orderNum: 28 },
-    { sort: 7, sortProj: 4, projName: '深圳项目', salerName: '吴九', orderNum: 25 },
-    { sort: 8, sortProj: 3, projName: '广州项目', salerName: '郑十', orderNum: 23 },
-    { sort: 9, sortProj: 5, projName: '杭州项目', salerName: '钱十一', orderNum: 20 },
-    { sort: 10, sortProj: 4, projName: '深圳项目', salerName: '孙十二', orderNum: 18 }
-]
-
 // 响应式数据
 const loading = ref(false)
+// 防止重复请求
+const isRequesting = ref(false)
 const chartType = ref('1')
 const tableCache = ref({
-    '1': staticProjectData,
-    '2': staticPersonalData
+    '1': [],
+    '2': []
 })
 
 // 表格列配置
@@ -150,48 +137,44 @@ const getColumnStyle = (column) => {
 // 切换图表类型
 const switchChartType = (type) => {
     if (chartType.value === type) return
-
-    loading.value = true
     chartType.value = type
-
-    // 模拟数据加载
-    setTimeout(() => {
-        // 如果有缓存数据，直接使用
-        if (!tableCache.value[type] || tableCache.value[type].length === 0) {
-            // 模拟API请求
-            setTimeout(() => {
-                tableCache.value[type] = type === '1' ? staticProjectData : staticPersonalData
-                loading.value = false
-            }, 500)
-        } else {
-            loading.value = false
-        }
-    }, 100)
+    fetchData()
 }
 
 // 刷新数据
-const refreshData = () => {
-    tableCache.value = {
-        '1': [...staticProjectData].sort(() => Math.random() - 0.5).map((item, index) => ({
-            ...item,
-            sort: index + 1
-        })),
-        '2': [...staticPersonalData].sort(() => Math.random() - 0.5).map((item, index) => ({
-            ...item,
-            sort: index + 1,
-            sortProj: Math.floor(index / 3) + 1
-        }))
-    }
-    loading.value = true
+const fetchData = async () => {
+    // 检查是否已有请求在进行
+    if (isRequesting.value) return;
 
-    setTimeout(() => {
-        loading.value = false
-    }, 500)
+    // const time = dayjs(props.dateTime).subtract(1, "month").format("YYYY-MM-DD"); // 上月
+    const time = dayjs(props.dateTime || new Date()).format("YYYY-MM-DD"); // 当月
+    const params = {
+        projIds: props.projectIds,
+        type: 1, // 0:年  1:月  2:周  3:日
+        day: `${time} 00:00:00`,
+        beginDate: dayjs(time).startOf("month").format("YYYY-MM-DD") + " 00:00:00",
+        endDate: dayjs(time).endOf("month").format("YYYY-MM-DD") + " 23:59:59",
+    };
+    isRequesting.value = true;
+    loading.value = true;
+    try {
+        const apiMethod = chartType.value == '1' ? largeScreenApi.getSaleProjInfo : largeScreenApi.getSaleProjSalerInfo;
+        const res = await apiMethod(params);
+        if (res.code === 200) {
+            tableCache.value[chartType.value] = res.data || [];
+        }
+    } catch (error) {
+        console.error('请求失败：', error);
+        tableCache.value[chartType.value] = [];
+    } finally {
+        isRequesting.value = false;
+        loading.value = false;
+    }
 }
 
 // 暴露方法给父组件
 defineExpose({
-    refreshData
+    refreshData: fetchData
 })
 
 // 行点击事件
@@ -213,6 +196,7 @@ const handleRowClick = (item) => {
     box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
     display: flex;
     flex-direction: column;
+    position: relative;
 
     .performance-header {
         display: flex;
@@ -419,45 +403,6 @@ const handleRowClick = (item) => {
         .empty-text {
             font-size: 26rpx;
             color: #999;
-        }
-    }
-
-    .loading-state {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 16rpx;
-        z-index: 20;
-        background: rgba(255, 255, 255, 0.9);
-        padding: 40rpx;
-        border-radius: 16rpx;
-
-        .loading-spinner {
-            width: 40rpx;
-            height: 40rpx;
-            border: 4rpx solid #f3f3f3;
-            border-top: 4rpx solid #409eff;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        .loading-text {
-            font-size: 24rpx;
-            color: #666;
-        }
-
-        @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-
-            100% {
-                transform: rotate(360deg);
-            }
         }
     }
 }

@@ -5,7 +5,6 @@
         <div class="two-column-header">
             <div class="header-title">业务指标</div>
         </div>
-
         <!-- 两列布局 -->
         <div class="two-column-grid">
             <!-- 第一组：3个指标 -->
@@ -26,25 +25,46 @@
                 </div>
             </div>
         </div>
+        <!-- 遮罩层组件 -->
+        <loading-mask :visible="loading" text="加载中..." />
     </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onUnmounted, onMounted } from 'vue'
+import LoadingMask from '@/components/loading-mask/loading-mask.vue'
+import dayjs from 'dayjs'
+import { largeScreenApi } from '@/common/api.js'
 
-// 静态数据
+const props = defineProps({
+    // 选择的项目ID
+    projectIds: {
+        type: Array,
+        default: () => []
+    },
+    // 选择的时间日期
+    dateTime: {
+        type: String,
+        default: ''
+    }
+})
+
+// loading状态
+const loading = ref(false)
+// 防止重复请求
+const isRequesting = ref(false)
 const dataObj = ref({
-    signDays: 15,
-    tfNum: 3,
-    tfMoney: 120.5,
-    tdNum: 2,
-    tdMoney: 85.3,
-    noSignNum: 8,
-    noSignMoney: 450.7,
-    collectMoney: 1280.2,
-    collectNum: 42,
-    outstdMoney: 320.8,
-    outstdNum: 11,
+    signDays: 0, // 认购转签约周期
+    tfNum: 0, // 退房数量
+    tfMoney: 0, // 退房金额
+    tdNum: 0, // 挞定数量
+    tdMoney: 0, // 挞定金额
+    noSignNum: 0, // 认购未签数量
+    noSignMoney: 0, // 认购未签金额
+    collectMoney: 0, // 累计应收金额
+    collectNum: 0, // 累计应收套数
+    outstdMoney: 0, // 逾期未回款
+    outstdNum: 0, // 逾期未回套数
 })
 
 // 数据处理函数
@@ -109,6 +129,52 @@ const getColorByType = (type) => {
     }
     return colors[type] || '#71808b'
 }
+const fetchData = async () => {
+    // 检查是否已有请求在进行
+    if (isRequesting.value) return;
+    const { dateTime, projectIds } = props;
+    const params = {
+        projIds: projectIds,
+        type: 1, // 0:年  1:月  2:周  3:日
+        day: `${dateTime} 00:00:00`,
+        beginDate: dayjs(dateTime).startOf("month").format("YYYY-MM-DD") + " 00:00:00",
+        endDate: dayjs(dateTime).endOf("month").format("YYYY-MM-DD") + " 23:59:59",
+    };
+    loading.value = true;
+    isRequesting.value = true;
+    try {
+        const res = await largeScreenApi.getSaleGeneralInfo(params);
+        if (res.code === 200 && res.data) {
+            dataObj.value = {
+                signDays: 0,
+                tfNum: 0,
+                tfMoney: 0,
+                tdNum: 0,
+                tdMoney: 0,
+                noSignNum: 0,
+                noSignMoney: 0,
+                collectMoney: 0,
+                collectNum: 0,
+                outstdMoney: 0,
+                outstdNum: 0,
+                ...res.data,
+            };
+        }
+    } finally {
+        loading.value = false;
+        isRequesting.value = false;
+    }
+};
+onMounted(() => {
+})
+
+onUnmounted(() => {
+})
+
+// 暴露方法给父组件
+defineExpose({
+    refreshData: fetchData
+})
 </script>
 
 <style lang="scss" scoped>
@@ -120,6 +186,7 @@ const getColorByType = (type) => {
     border-radius: 12rpx;
     padding: 20rpx 20rpx;
     box-sizing: border-box;
+    position: relative;
 }
 
 /* 头部标题 */

@@ -7,13 +7,13 @@
     "dayjs": {
       "src": "../../../../../node_modules/dayjs/dayjs.min.js",
       "file": "dayjs.js",
-      "fileHash": "31deff4f",
+      "fileHash": "a1f98849",
       "needsInterop": true
     },
     "echarts": {
       "src": "../../../../../node_modules/echarts/index.js",
       "file": "echarts.js",
-      "fileHash": "aca09fdb",
+      "fileHash": "0ea54dde",
       "needsInterop": false
     }
   },
