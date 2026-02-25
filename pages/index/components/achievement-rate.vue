@@ -147,13 +147,13 @@ const chartOptions = ref({
             show: false
         },
         min: 0,
-        max: 100,
-        // alignTicks: false, // 刻度是否对齐，默认true
+        // max: 100,
+        alignTicks: false, // 刻度是否对齐，默认true
         axisName: {
             color: '#666', // 文字颜色
             fontSize: 12,
             fontWeight: 500,
-            padding: [10, 10, 5, 0], // 上、右、下、左内边距
+            padding: [10, 0, 5, 0], // 上、右、下、左内边距
             rich: {
                 // 定义富文本样式
                 title: {
@@ -346,13 +346,19 @@ const fetchData = async () => {
             premiumRate = formatPercent(premiumRes.data.premiumRate) || 0
         }
 
+        const allValues = [totalRate, orderRate, collectRate, signRate, premiumRate]
+        // 计算统一的最大值：取所有值中超过100的最大值的1.2倍，如果没有超过100的就用100
+        const globalMax = Math.max(
+            100,
+            ...allValues.map(v => v > 100 ? Math.ceil(v * 1.2 / 10) * 10 : 0)
+        )
         // 更新指标数据
         indicatorData.value = [
-            { name: '综合达成率', max: 100, value: totalRate },
-            { name: '认购达成率', max: 100, value: orderRate },
-            { name: '回款达成率', max: 100, value: collectRate },
-            { name: '签约达成率', max: 100, value: signRate },
-            { name: '溢价率', max: 100, value: premiumRate }
+            { name: '综合达成率', max: globalMax, value: totalRate },
+            { name: '认购达成率', max: globalMax, value: orderRate },
+            { name: '回款达成率', max: globalMax, value: collectRate },
+            { name: '签约达成率', max: globalMax, value: signRate },
+            { name: '溢价率', max: globalMax, value: premiumRate }
         ]
 
         // 更新系列数据
