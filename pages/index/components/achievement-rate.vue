@@ -153,7 +153,7 @@ const chartOptions = ref({
             color: '#666', // 文字颜色
             fontSize: 12,
             fontWeight: 500,
-            padding: [15, 0, 0, 0],
+            padding: [10, 10, 5, 0], // 上、右、下、左内边距
             rich: {
                 // 定义富文本样式
                 title: {
@@ -650,7 +650,7 @@ defineExpose({
 
     .echarts-chart {
         width: 100%;
-        height: 420rpx;
+        height: 440rpx;
         position: relative;
         z-index: 1;
     }

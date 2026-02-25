@@ -371,7 +371,7 @@ const handleRowClick = (item) => {
 
     .data-cell {
         padding: 16rpx 8rpx;
-        font-size: 20rpx;
+        font-size: 22rpx;
         color: #666;
         display: flex;
         align-items: center;

@@ -312,41 +312,4 @@ const goHome = () => {
     }
 }
 
-/* 平板适配 */
-@media (min-width: 768px) {
-    .custom-navbar {
-        .navbar-content {
-            padding: 0 48rpx;
-            height: 96rpx;
-
-            .nav-center {
-                .nav-title {
-                    font-size: 36rpx;
-                }
-
-                &.both-sides {
-                    left: 140rpx;
-                    right: 140rpx;
-                }
-
-                &.left-only {
-                    left: 140rpx;
-                    padding-right: 140rpx;
-                }
-
-                &.right-only {
-                    right: 140rpx;
-                    padding-left: 140rpx;
-                }
-            }
-        }
-    }
-}
-
-/* 安全区域适配（iPhone X+） */
-@supports (padding-bottom: env(safe-area-inset-bottom)) {
-    .custom-navbar.navbar-fixed {
-        padding-top: env(safe-area-inset-top);
-    }
-}
 </style>
