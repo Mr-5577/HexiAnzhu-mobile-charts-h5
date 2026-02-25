@@ -9,18 +9,10 @@ export const userApi = {
       loadingText: "登录中...",
     });
   },
-
-  // 获取用户信息
-  getUserInfo() {
-    return get(
-      "/user/info",
-      {},
-      {
-        showLoading: false,
-      },
-    );
+  // 获取认证地址回调
+  getAuthRedirectUrl: (data) => {
+    return post(`/callback/getAuthRedirectUrl`, data);
   },
-
   // 退出登录
   logout() {
     return post("/auth/logout");

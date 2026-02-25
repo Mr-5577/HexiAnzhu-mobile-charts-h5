@@ -11,17 +11,15 @@
             </view>
         </view>
 
-        <!-- 表格容器 -->
-        <scroll-view class="table-container" scroll-y>
-            <!-- 表头 -->
-            <view class="table-row header-row">
-                <view v-for="(column, colIndex) in tableColumns" :key="colIndex" class="table-cell header-cell"
-                    :style="getColumnStyle(column)">
-                    <text class="header-text">{{ column.label }}</text>
-                </view>
+        <!-- 表头 -->
+        <view class="table-row header-row">
+            <view v-for="(column, colIndex) in tableColumns" :key="colIndex" class="table-cell header-cell"
+                :style="getColumnStyle(column)">
+                <text class="header-text">{{ column.label }}</text>
             </view>
-
-            <!-- 表格数据 -->
+        </view>
+        <!-- 表格数据 -->
+        <scroll-view class="table-container" scroll-y>
             <view v-for="(item, index) in currentTableData" :key="index" class="table-row data-row"
                 :class="{ 'striped': index % 2 === 1 }" @click="handleRowClick(item)">
                 <view v-for="(column, colIndex) in tableColumns" :key="colIndex" class="table-cell data-cell"
@@ -74,7 +72,7 @@ const CHART_TYPES = ref([
 const loading = ref(false)
 // 防止重复请求
 const isRequesting = ref(false)
-const chartType = ref('1')
+const chartType = ref('1') // 默认项目月度排名
 const tableCache = ref({
     '1': [],
     '2': []

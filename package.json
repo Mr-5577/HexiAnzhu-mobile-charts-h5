@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "dayjs": "^1.11.7",
-    "echarts": "^6.0.0"
+    "echarts": "^6.0.0",
+    "uuid": "^13.0.0"
   }
 }

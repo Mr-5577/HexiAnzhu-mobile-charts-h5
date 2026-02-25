@@ -437,20 +437,24 @@ defineExpose({
             gap: 12rpx;
 
             .chart-btn {
-                padding: 2rpx 14rpx 4rpx;
+                height: 44rpx;
+                line-height: 44rpx;
+                padding: 0rpx 14rpx;
                 font-size: 24rpx;
                 color: #666;
                 background: rgba(239, 240, 253, 0.5);
-                border-radius: 24rpx;
+                border-radius: 20rpx;
                 transition: all 0.3s ease;
                 border: 1rpx solid transparent;
+                display: flex;
+                align-items: center;
+                justify-content: center;
 
                 &.active {
                     color: #409eff;
-                    background: rgb(239, 240, 253);
+                    background: #fff;
                     border-color: #409eff;
                     transform: translateY(-2rpx);
-                    box-shadow: 0 4rpx 12rpx rgba(64, 158, 255, 0.15);
                 }
 
                 &:active {
@@ -470,13 +474,17 @@ defineExpose({
                 gap: 12rpx;
 
                 .sub-type-btn {
-                    padding: 0rpx 12rpx;
+                    height: 36rpx;
+                    line-height: 36rpx;
+                    padding: 0rpx 14rpx;
                     font-size: 22rpx;
                     color: #626aef;
                     background: rgba(239, 240, 253, 0.5);
-                    border-radius: 30rpx;
+                    border-radius: 16rpx;
                     transition: all 0.3s ease;
-                    border: 1rpx solid transparent;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
 
                     &.active {
                         color: #fff;
