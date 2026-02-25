@@ -18,7 +18,7 @@
                     <view class="goal-info">
                         <text class="goal-label">{{ item.label }}</text>
                         <text class="goal-value">{{ item.complete }}/{{ item.goal }}</text>
-                        <text class="goal-percent">{{ item.percent }}%</text>
+                        <!-- <text class="goal-percent">{{ item.percent }}%</text> -->
                     </view>
                     <view class="progress-wrapper">
                         <progress :percent="item.percent" :active="true" :activeColor="item.color"

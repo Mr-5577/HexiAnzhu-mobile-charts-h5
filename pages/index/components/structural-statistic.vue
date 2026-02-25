@@ -178,38 +178,6 @@ const chartOption = computed(() => {
     }
 
     return {
-        tooltip: {
-            trigger: 'item',
-            backgroundColor: 'rgba(0, 0, 0, 0.7)',
-            borderColor: '#333',
-            textStyle: {
-                color: '#fff',
-                fontSize: 12
-            },
-            formatter: '{a}<br/>{b}: {c} ({d}%)'
-        },
-        // legend: {
-        //     type: 'scroll',
-        //     orient: 'horizontal',
-        //     bottom: '0%',
-        //     left: 'center',
-        //     textStyle: {
-        //         color: '#666',
-        //         fontSize: 11
-        //     },
-        //     itemWidth: 10,
-        //     itemHeight: 10,
-        //     itemGap: 5,
-        //     // 图例百分比
-        //     formatter: function (name) {
-        //         const item = chartData.find(d => d.name === name)
-        //         if (item) {
-        //             const percent = ((item.value / total) * 100).toFixed(1)
-        //             return `${name} ${item.value}(${percent}%)`
-        //         }
-        //         return name
-        //     }
-        // },
         grid: {
             left: '3%',
             right: '3%',
@@ -253,7 +221,7 @@ const chartOption = computed(() => {
                             fontSize: 11,
                             color: '#333',
                             fontWeight: 'bold',
-                            lineHeight: 18
+                            lineHeight: 12
                         },
                         b: {
                             fontSize: 10,

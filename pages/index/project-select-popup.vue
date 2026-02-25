@@ -176,6 +176,13 @@ const handleCancel = () => {
 
 // 确认选择
 const handleConfirm = () => {
+    if (selectedCount.value == 0) {
+        uni.showToast({
+            title: '至少选择一个项目',
+            icon: 'none'
+        })
+        return
+    }
     const selectedIds = projectList.value.filter(item => item.checked).map((vi) => vi.id)
     console.log('已选中的项目ID:', selectedIds)
     // 触发事件给父组件

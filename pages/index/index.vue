@@ -32,8 +32,7 @@
 			<!-- 主内容 -->
 			<view class="content">
 				<!-- 渠道及转化 -->
-				<achievement-rate ref="achievementRateRef" :projectIds="projectIds"
-					:dateTime="dateTime"></achievement-rate>
+				<achievement-rate ref="achievementRateRef" :projectIds="projectIds" :dateTime="dateTime"></achievement-rate>
 				<!-- 目标达成统计 -->
 				<goal-achieved ref="goalAchievedRef" :projectIds="projectIds" :dateTime="dateTime"></goal-achieved>
 				<!-- 业绩走势情况 -->
