@@ -87,24 +87,24 @@ const statisticsItems = computed(() => [
         type: "cycle"
     },
     {
-        text: "认购未签约",
-        value: `${formatTwoDecimal(dataObj.value.noSignMoney)}万(${dataObj.value.noSignNum}套)`,
-        type: "sign"
-    },
-    {
         text: "挞定",
         value: `${formatTwoDecimal(dataObj.value.tdMoney)}万(${dataObj.value.tdNum}套)`,
         type: "forfeit"
     },
     {
-        text: "累计应收",
-        value: `${formatTwoDecimal(dataObj.value.collectMoney)}万(${dataObj.value.collectNum}套)`,
-        type: "receivable"
-    },
-    {
         text: "退房",
         value: `${formatTwoDecimal(dataObj.value.tfMoney)}万(${dataObj.value.tfNum}套)`,
         type: "refund"
+    },
+    {
+        text: "认购未签约",
+        value: `${formatTwoDecimal(dataObj.value.noSignMoney)}万(${dataObj.value.noSignNum}套)`,
+        type: "sign"
+    },
+    {
+        text: "累计应收",
+        value: `${formatTwoDecimal(dataObj.value.collectMoney)}万(${dataObj.value.collectNum}套)`,
+        type: "receivable"
     },
     {
         text: "逾期未回款",
