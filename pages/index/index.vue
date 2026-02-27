@@ -403,7 +403,7 @@ onMounted(async () => {
 				display: flex;
 				align-items: center;
 				justify-content: space-between;
-				background: #f8f8f8;
+				background: #f0f7ff;
 				border-radius: 12rpx;
 				padding: 18rpx 26rpx;
 				transition: all 0.3s ease;

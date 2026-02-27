@@ -11,30 +11,30 @@
                         class="clear-icon" />
                 </view>
                 <view class="select-info">
-                    <view class="select-all" @click="toggleSelectAll">
-                        <checkbox :checked="isFilteredAllSelected" style="transform:scale(0.8)" />
+                    <!-- 使用label包裹整个全选区域，并绑定change事件 -->
+                    <label class="select-all" @click="toggleSelectAll">
+                        <checkbox :checked="isFilteredAllSelected" style="transform:scale(0.8)"
+                            @click.stop="toggleSelectAll" />
                         <text class="select-all-text">{{ isFilteredAllSelected ? '取消全选' : '全选' }}
                             <!-- 如果是搜索结果，添加提示 -->
                             <text v-if="searchKeyword" style="font-size: 24rpx; color: #666;">
                                 (当前搜索结果)
                             </text>
                         </text>
-
-                    </view>
+                    </label>
                     <text class="selected-count">已选择 {{ selectedCount }} 个项目</text>
                 </view>
             </view>
 
             <view class="options-list">
-                <checkbox-group @change="handleCheckboxChange">
-                    <label class="option-item" v-for="item in filteredProjectList" :key="item.id">
-                        <checkbox :value="String(item.id)" :checked="item.checked" style="transform:scale(0.8)"
-                            @click="toggleItem(item)" />
-                        <view class="option-content">
-                            <text class="proj-name">{{ item.projName }}</text>
-                        </view>
-                    </label>
-                </checkbox-group>
+                <label class="option-item" v-for="item in filteredProjectList" :key="item.id" @click="toggleItem(item)">
+                    <!-- 给checkbox添加change事件，确保点击复选框也能触发 -->
+                    <checkbox :value="String(item.id)" :checked="item.checked" style="transform:scale(0.8)"
+                        @click.stop="toggleItem(item)" />
+                    <view class="option-content">
+                        <text class="proj-name">{{ item.projName }}</text>
+                    </view>
+                </label>
 
                 <!-- 无数据提示 -->
                 <view v-if="filteredProjectList.length === 0" class="empty-tips">
@@ -141,8 +141,12 @@ const clearSearch = () => {
     searchKeyword.value = ''
 }
 
-// 切换全选
-const toggleSelectAll = () => {
+// 修改3：切换全选 - 使用事件参数来防止重复触发
+const toggleSelectAll = (event) => {
+    // 防止事件冒泡导致重复触发
+    if (event) {
+        event.stopPropagation()
+    }
     const shouldSelectAll = !isFilteredAllSelected.value
     // 只更新当前可见的搜索结果
     const visibleIds = filteredProjectList.value.map(item => item.id)
@@ -153,17 +157,13 @@ const toggleSelectAll = () => {
     })
 }
 
-// 处理单个复选框变化
-const handleCheckboxChange = (e) => {
-    const selectedIds = e.detail.value
-    // 更新所有项目的选中状态
-    projectList.value.forEach(item => {
-        item.checked = selectedIds.includes(item.id.toString())
-    })
-}
-
-// 切换单个项目选中状态
-const toggleItem = (item) => {
+// 切换单个项目 - 添加事件处理和更新锁
+const toggleItem = (item, event) => {
+    // 防止事件冒泡
+    if (event) {
+        event.stopPropagation()
+    }
+    // 直接切换状态
     item.checked = !item.checked
 }
 
@@ -303,11 +303,11 @@ defineExpose({
                 margin-left: 20rpx;
                 display: flex;
                 flex-direction: column;
+            }
 
-                .proj-name {
-                    font-size: 30rpx;
-                    color: #333;
-                }
+            .proj-name {
+                font-size: 30rpx;
+                color: #333;
             }
         }
 
