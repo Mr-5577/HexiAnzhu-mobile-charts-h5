@@ -24,7 +24,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { userApi } from '@/common/api.js'
 import { v4 as uuidv4 } from 'uuid'
 import config from '@/utils/config.js'
@@ -34,6 +34,11 @@ const STORAGE_KEYS = {
     TOKEN: 'token',
     STATE_TAG: 'stateTag'
 }
+
+// 固定的回调地址，http://sys.ruizhongzx.com/pages/login/auto-login
+const CALLBACK_URL = `${config.baseUrlActual}/pages/login/auto-login`
+// 编码后的state（用于传递给后端）
+const ENCODED_STATE = encodeURIComponent(CALLBACK_URL)
 
 // 工具函数：显示消息提示
 const showMessage = (message) => {
@@ -75,10 +80,6 @@ const locationState = ref('')
 // 防止重复处理
 let isProcessing = false
 
-const currentState = computed(() => {
-    return storage.getStateTag()
-});
-
 // H5 获取 URL 参数
 const getQueryParams = () => {
     const urlParams = new URLSearchParams(window.location.search)
@@ -92,30 +93,16 @@ const getQueryParams = () => {
 // 重定向到认证页面
 const redirectToAuth = async () => {
     try {
-        // 生成 state 并存储
-        // const validState = uuidv4()
-
-        // 把地址编码后作为state参数进行传递   http://sys.ruizhongzx.com/pages/login/auto-login
-        const currentUrl = `${config.baseUrlActual}/pages/login/auto-login`
-        console.log('currentUrl', currentUrl)
-        const validState = encodeURIComponent(currentUrl); // encodeURIComponent 编码    decodeURIComponent 解码
-
-        // storage.setStateTag(validState) // 缓存编码的地址
-        storage.setStateTag(currentUrl) // 缓存未编码的地址
-
-        console.log('生成新的stateTag:', validState)
 
         showMessage('正在获取认证信息...')
 
         // 获取认证地址
-        const res = await userApi.getAuthRedirectUrl({ state: validState })
+        const res = await userApi.getAuthRedirectUrl({ state: ENCODED_STATE })
         if (res.code === 200 && res.data) {
             console.log('获取到认证地址，开始重定向:', res.data)
             showMessage('正在跳转到认证页面...')
-
             // 短暂延迟让用户看到提示
             await new Promise(resolve => setTimeout(resolve, 800))
-
             // H5 跳转
             window.location.href = res.data
         } else {
@@ -134,11 +121,8 @@ const handleTokenLogin = async (token, stateParam) => {
     if (stateParam === 'hxaz') {
         // 保存token
         storage.setToken(token)
-        // 清除state标记
-        storage.removeStateTag()
         showMessage('登录成功，正在跳转...')
         await new Promise(resolve => setTimeout(resolve, 800))
-
         // H5 跳转到首页
         uni.redirectTo({
             url: '/pages/index/index'
@@ -147,30 +131,22 @@ const handleTokenLogin = async (token, stateParam) => {
     }
 
     // 验证 state
-    if (stateParam !== storage.getStateTag()) {
-        console.error('state验证失败:', {
-            received: stateParam,
-            expected: storage.getStateTag()
+    const decodeState = decodeURIComponent(stateParam)
+    if (stateParam === CALLBACK_URL || decodeState === CALLBACK_URL) {
+        // 存储 token
+        storage.setToken(token)
+        showMessage('登录成功，正在跳转...')
+        await new Promise(resolve => setTimeout(resolve, 800))
+        // H5 跳转到首页
+        uni.redirectTo({
+            url: '/pages/index/index'
         })
+    } else {
+        console.error('state验证失败:', { received: stateParam, expected: CALLBACK_URL })
         showMessage('登录验证失败，请重新登录')
         storage.removeToken()
-        storage.removeStateTag()
         throw new Error('state验证失败')
     }
-
-    // 存储 token
-    storage.setToken(token)
-    // 清除state标记
-    storage.removeStateTag()
-    console.log('token验证成功')
-
-    showMessage('登录成功，正在跳转...')
-    await new Promise(resolve => setTimeout(resolve, 800))
-
-    // H5 跳转到首页
-    uni.redirectTo({
-        url: '/pages/index/index'
-    })
 }
 
 // 主处理逻辑
@@ -178,7 +154,7 @@ const handleRouteParams = async () => {
     // 防止重复处理
     if (isProcessing) return
     isProcessing = true
-    
+
     try {
         loading.value = true
         errorMessage.value = ''
@@ -192,35 +168,20 @@ const handleRouteParams = async () => {
         errorInfo.value = error
 
         // 情况1：有错误参数
-        if (error) {
-            errorMessage.value = `认证服务错误: ${error}`
-            showMessage(`认证错误: ${error}`, 'error')
-            return
-        }
+        // if (error) {
+        //     errorMessage.value = `认证服务错误: ${error}`
+        //     showMessage(`认证错误: ${error}`)
+        //     return
+        // }
 
-        // 情况2：有 token 和 state，进行登录
+        // 情况2：有 token 和 state，开始验证登录
         if (token && state) {
-            console.log('有token和state，开始验证登录')
             await handleTokenLogin(token, state)
             return
         }
-
-        // 情况3：没token但有state
-        if (!token && storage.getStateTag()) {
-            // 清除state标记
-            storage.removeStateTag()
-        }
-        // 情况4：首次访问，没有token也没有state
-        if (!token && !storage.getStateTag()) {
-            console.log('首次访问，开始重定向到认证页面')
-            await redirectToAuth()
-            return
-        }
-
-
-        // 其他情况
-        errorMessage.value = '无效的登录参数'
-        showMessage('无效的登录参数', 'error')
+        // 情况3：首次访问，没有token也没有state
+        console.log('没有token，开始重定向到认证页面')
+        await redirectToAuth()
 
     } catch (err) {
         console.error('登录处理失败:', err)
@@ -234,14 +195,11 @@ const handleRouteParams = async () => {
 
 // 重试
 const handleRetry = () => {
-    console.log('用户点击重试')
-
     // 清理状态
     errorMessage.value = ''
-    storage.removeStateTag()
+    storage.removeToken()
     isProcessing = false
     loading.value = true
-
     // 重新处理
     handleRouteParams()
 }
@@ -250,15 +208,13 @@ const handleRetry = () => {
 onMounted(() => {
     console.log('H5自动登录页面挂载')
     urlInfo.value = window.location.href
-    locationState.value = storage.getStateTag()
+    locationState.value = CALLBACK_URL
     handleRouteParams()
 })
 
 onUnmounted(() => {
     console.log('H5自动登录页面卸载')
     isProcessing = false
-    // 清除state标记
-    storage.removeStateTag()
 })
 </script>
 
