@@ -96,7 +96,7 @@ const redirectToAuth = async () => {
         // 生成 state 并存储
         // const validState = uuidv4()
 
-        // 把地址编码后作为state参数进行传递   http://sys.ruizhongzx.com/pages/login/auto-login
+        // 把地址编码后作为state参数进行传递   http://sysa.hexianzhu.com/pages/login/auto-login
         const currentUrl = `${config.baseUrlActual}/pages/login/auto-login`
         console.log('currentUrl', currentUrl)
         const validState = encodeURIComponent(currentUrl); // encodeURIComponent 编码    decodeURIComponent 解码

@@ -7,13 +7,13 @@
   "transformPx": false,
   "vueVersion": "3",
   "h5": {
-    "title": "移动端图表",
+    "title": "和喜·销售驾驶舱",
     "router": {
       "mode": "history",
-      "base": "/app"
+      "base": "/"
     },
-    "publicPath": "./",  // 设置为相对路径
-    "assetsPublicPath": "./",  // 静态资源相对路径
+    "publicPath": "./",
+    "assetsPublicPath": "./",
     "template": "index.html",
     "domain": "",
     "devServer": {
@@ -21,7 +21,7 @@
       "disableHostCheck": true,
       "proxy": {
         "/api": {
-          "target": "http://sys.ruizhongzx.com",
+          "target": "http://10.215.215.6:8091",
           "changeOrigin": true,
           "pathRewrite": {
             "^/api": "/api"

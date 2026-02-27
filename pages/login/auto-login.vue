@@ -35,7 +35,7 @@ const STORAGE_KEYS = {
     STATE_TAG: 'stateTag'
 }
 
-// 固定的回调地址，http://sys.ruizhongzx.com/pages/login/auto-login
+// 固定的回调地址，http://sysa.hexianzhu.com/pages/login/auto-login
 const CALLBACK_URL = `${config.baseUrlActual}/pages/login/auto-login`
 // 编码后的state（用于传递给后端）
 const ENCODED_STATE = encodeURIComponent(CALLBACK_URL)

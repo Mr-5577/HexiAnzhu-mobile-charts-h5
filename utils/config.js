@@ -6,7 +6,7 @@ const config = {
   },
   production: {
     baseUrl: '/api',
-    baseUrlActual: 'http://sys.ruizhongzx.com/app',
+    baseUrlActual: 'http://sysa.hexianzhu.com',
     env: 'production'
   }
 }

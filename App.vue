@@ -32,6 +32,8 @@ export default {
 				// 检查token
 				const token = uni.getStorageSync('token')
 				if (!token) {
+					// 如果当前已经是登录页，不重复跳转
+					if (route === 'pages/login/auto-login') return
 					// 清除 token stateTag 相关缓存
 					uni.removeStorageSync("token")
 					uni.removeStorageSync("stateTag")
