@@ -1,7 +1,7 @@
 <template>
 	<view class="home-page">
 		<!-- 固定导航栏 -->
-		<custom-navbar title="数据驾驶舱" :show-back="false" fixed :backgroundColor="navbarBgColor"
+		<custom-navbar title="销售驾驶舱" :show-back="false" fixed :backgroundColor="navbarBgColor"
 			:title-color="navbarTitleColor" :translucent="true" :border-bottom="showNavBorder">
 			<template #right>
 				<view @click="openSearchPopup">

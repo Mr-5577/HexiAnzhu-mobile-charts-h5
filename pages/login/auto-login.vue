@@ -2,7 +2,8 @@
     <view class="auto-login-page">
         <!-- 加载状态 -->
         <view v-if="loading" class="loading-container">
-            <text class="loading-text">正在验证身份...</text>
+            <text class="loading-text">登录验证</text>
+            <text v-if="loadingMessage" class="loading-message">{{ loadingMessage }}</text>
         </view>
 
         <!-- 错误状态 -->
@@ -42,12 +43,18 @@ const ENCODED_STATE = encodeURIComponent(CALLBACK_URL)
 
 // 工具函数：显示消息提示
 const showMessage = (message) => {
-    uni.showToast({
-        title: message,
-        icon: 'none',
-        duration: 2000,
-        mask: true
-    })
+    // 如果正在加载中，将消息显示在加载区域
+    if (loading.value) {
+        loadingMessage.value = message
+    } else {
+        // 不在加载状态时，使用原来的 toast
+        uni.showToast({
+            title: message,
+            icon: 'none',
+            duration: 2000,
+            mask: true
+        })
+    }
 }
 
 // 本地存储操作
@@ -69,7 +76,7 @@ const storage = {
 const loading = ref(true)
 const errorMessage = ref('')
 const isShowError = ref(false)
-
+const loadingMessage = ref('')
 // 调试信息
 const urlInfo = ref('')
 const tokenInfo = ref('')
@@ -92,10 +99,10 @@ const getQueryParams = () => {
 
 // 重定向到认证页面
 const redirectToAuth = async () => {
+
+    showMessage('正在获取认证信息...')
+
     try {
-
-        showMessage('正在获取认证信息...')
-
         // 获取认证地址
         const res = await userApi.getAuthRedirectUrl({ state: ENCODED_STATE })
         if (res.code === 200 && res.data) {
@@ -168,11 +175,11 @@ const handleRouteParams = async () => {
         errorInfo.value = error
 
         // 情况1：有错误参数
-        // if (error) {
-        //     errorMessage.value = `认证服务错误: ${error}`
-        //     showMessage(`认证错误: ${error}`)
-        //     return
-        // }
+        if (error) {
+            errorMessage.value = `认证服务错误: ${error}`
+            showMessage(`认证错误: ${error}`)
+            return
+        }
 
         // 情况2：有 token 和 state，开始验证登录
         if (token && state) {
@@ -186,7 +193,7 @@ const handleRouteParams = async () => {
     } catch (err) {
         console.error('登录处理失败:', err)
         errorMessage.value = err instanceof Error ? err.message : '登录处理失败'
-        showMessage('登录处理失败', 'error')
+        showMessage('登录处理失败')
     } finally {
         loading.value = false
         isProcessing = false
@@ -215,6 +222,7 @@ onMounted(() => {
 onUnmounted(() => {
     console.log('H5自动登录页面卸载')
     isProcessing = false
+    loadingMessage.value = ''
 })
 </script>
 
@@ -257,6 +265,13 @@ onUnmounted(() => {
             border-top-color: #409eff;
             border-radius: 50%;
             animation: spin 1s linear infinite;
+        }
+
+        .loading-message {
+            font-size: 26rpx;
+            color: #409eff;
+            margin-top: 20rpx;
+            animation: fadeInOut 2s ease-in-out;
         }
     }
 
@@ -343,6 +358,24 @@ onUnmounted(() => {
 @keyframes spin {
     to {
         transform: rotate(360deg);
+    }
+}
+
+@keyframes fadeInOut {
+    0% {
+        opacity: 0;
+    }
+
+    20% {
+        opacity: 1;
+    }
+
+    80% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0;
     }
 }
 </style>

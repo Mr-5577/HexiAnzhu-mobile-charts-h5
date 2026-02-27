@@ -4,7 +4,7 @@ import config from "@/utils/config.js";
  */
 const baseConfig = {
   baseURL: config.baseUrl,
-  timeout: 10000,
+  timeout: 30000,
   header: {
     "Content-Type": "application/json",
   },
@@ -134,8 +134,7 @@ const request = (options = {}) => {
     };
     // 添加token
     const token = uni.getStorageSync("token") || "";
-    // const token =
-    //   "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOjE1LCJ1c2VybmFtZSI6IjAwMDAxNSIsImlhdCI6MTc3MjA2ODk2NSwiZXhwIjoxNzcyMTU1MzY1fQ.URlsb0rMVmVzDlrFOWt6oRYwW6mJpDrkSpBsD9uogcs";
+    // const token = 'eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOjE1LCJ1c2VybmFtZSI6IjAwMDAxNSIsImlhdCI6MTc3MjE4MTMwOSwiZXhwIjoxNzcyMjY3NzA5fQ.rgEM3nUHKkCO4XSDSsuYWCUCQlrbCih5aRdevSekuB8'
     if (token) {
       requestConfig.header.Authorization = `Bearer ${token}`;
     }

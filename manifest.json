@@ -21,7 +21,7 @@
       "disableHostCheck": true,
       "proxy": {
         "/api": {
-          "target": "http://10.215.215.6:8091",
+          "target": "http://sys.hexianzhu.com",
           "changeOrigin": true,
           "pathRewrite": {
             "^/api": "/api"
