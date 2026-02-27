@@ -1,20 +1,54 @@
 <script>
+import config from '@/utils/config.js'
+// 白名单：不需要登录token就能访问的页面
+const WHITE_LIST = ['pages/login/auto-login']
 export default {
 	onLaunch: function () {
 		// console.log('App Launch')
 		console.log('process.env.NODE_ENV:', process.env.NODE_ENV)
+		console.log('当前配置:', config)
 	},
 	onShow: function () {
 		// console.log('App Show')
+		// 每次显示页面都检查登录状态
+		this.checkTokenBeforeEnter()
 	},
 	onHide: function () {
 		// console.log('App Hide')
+	},
+	methods: {
+		checkTokenBeforeEnter() {
+			try {
+				const pages = getCurrentPages()
+				if (pages.length === 0) return
+
+				const currentPage = pages[pages.length - 1]
+				const route = currentPage.route
+				console.log('当前路由:', route)
+
+				// 检查是否在白名单中,白名单页面不检查token
+				if (WHITE_LIST.includes(route)) return
+
+				// 检查token
+				const token = uni.getStorageSync('token')
+				if (!token) {
+					// 清除 token stateTag 相关缓存
+					uni.removeStorageSync("token")
+					uni.removeStorageSync("stateTag")
+					// 跳转到自动登录页
+					uni.reLaunch({
+						url: "/pages/login/auto-login"
+					})
+				}
+			} catch (error) {
+				console.error('检查登录状态出错:', error)
+			}
+		}
 	}
 }
 </script>
 
 <style>
-
 /* 1. 盒子模型统一 */
 * {
 	box-sizing: border-box;

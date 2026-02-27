@@ -1,11 +1,9 @@
+import config from "@/utils/config.js";
 /**
  * 基础请求配置
  */
 const baseConfig = {
-  baseURL:
-    process.env.NODE_ENV === "development"
-      ? "/api"
-      : "https://api.example.com/api",
+  baseURL: config.baseUrl,
   timeout: 10000,
   header: {
     "Content-Type": "application/json",
@@ -47,6 +45,24 @@ const hideLoading = () => {
 };
 
 /**
+ * token过期处理
+ */
+const handleTokenExpired = () => {
+  // 清除 token 和 stateTag
+  uni.removeStorageSync("token");
+  uni.removeStorageSync("stateTag");
+  // 提示信息
+  showToast("登录已过期，重新登录");
+  // 跳转到自动登录页
+  setTimeout(() => {
+    uni.reLaunch({
+      url: "/pages/login/auto-login",
+    });
+  }, 1500);
+  return Promise.reject(new Error("token过期"));
+};
+
+/**
  * 核心请求方法
  * @param {Object} options - 请求配置
  * @returns {Promise} - Promise对象
@@ -75,20 +91,31 @@ const request = (options = {}) => {
           hideLoading();
         }
         // HTTP状态码判断
-        if (res.statusCode === 200) {
-          resolve(res.data);
-        } else {
-          // 处理HTTP错误
+        // 1.处理HTTP状态码的401/403（token过期）
+        if (res.statusCode === 401 || res.statusCode === 403) {
+          handleTokenExpired();
+          return;
+        }
+        // 2.处理其他HTTP错误（500, 404等）
+        if (res.statusCode !== 200) {
           let errorMsg = `请求失败: ${res.statusCode}`;
           if (res.data && res.data.message) {
             errorMsg = res.data.message;
           }
-          // 显示错误提示
           if (options.showError !== false) {
             showToast(errorMsg);
           }
           reject(new Error(errorMsg));
+          return;
         }
+        // 3.HTTP 200，处理业务code 401/403
+        if (res.data?.code === 401 || res.data?.code === 403) {
+          handleTokenExpired();
+          return;
+        }
+
+        // 4.成功返回
+        resolve(res.data);
       },
       // 失败回调
       fail: (err) => {
@@ -103,14 +130,12 @@ const request = (options = {}) => {
         reject(err);
       },
       // 完成回调
-      complete: () => {
-        // 可以在这里做一些清理工作
-      },
+      complete: () => {},
     };
     // 添加token
-    // const token = uni.getStorageSync("token") || "";
-    const token =
-      "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOjE1LCJ1c2VybmFtZSI6IjAwMDAxNSIsImlhdCI6MTc3MDg1OTY4NCwiZXhwIjoxNzcwOTQ2MDg0fQ.-1rkaeCyT7iYQn8eC9hUi2IJfrND-w_vPdf_V3cEZw4";
+    const token = uni.getStorageSync("token") || "";
+    // const token =
+    //   "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOjE1LCJ1c2VybmFtZSI6IjAwMDAxNSIsImlhdCI6MTc3MjA2ODk2NSwiZXhwIjoxNzcyMTU1MzY1fQ.URlsb0rMVmVzDlrFOWt6oRYwW6mJpDrkSpBsD9uogcs";
     if (token) {
       requestConfig.header.Authorization = `Bearer ${token}`;
     }
