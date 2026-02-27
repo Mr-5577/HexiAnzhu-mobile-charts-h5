@@ -1,5 +1,5 @@
 {
-  "name": "echarts-h5",
+  "name": "数据驾驶舱",
   "appid": "__UNI__511F186",
   "description": "",
   "versionName": "1.0.0",
@@ -9,9 +9,11 @@
   "h5": {
     "title": "移动端图表",
     "router": {
-      "mode": "hash",
-      "base": "./"
+      "mode": "history",
+      "base": "/app"
     },
+    "publicPath": "./",  // 设置为相对路径
+    "assetsPublicPath": "./",  // 静态资源相对路径
     "template": "index.html",
     "domain": "",
     "devServer": {
@@ -19,10 +21,10 @@
       "disableHostCheck": true,
       "proxy": {
         "/api": {
-          "target": "http://localhost:3000",
+          "target": "http://sys.ruizhongzx.com",
           "changeOrigin": true,
           "pathRewrite": {
-            "^/api": ""
+            "^/api": "/api"
           }
         }
       }

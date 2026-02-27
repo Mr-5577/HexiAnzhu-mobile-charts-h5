@@ -1,19 +1,25 @@
 {
-  "hash": "aee2ade9",
+  "hash": "1837eba2",
   "configHash": "4bf099d8",
-  "lockfileHash": "f43de280",
-  "browserHash": "ac441c6e",
+  "lockfileHash": "55060777",
+  "browserHash": "933833dd",
   "optimized": {
     "dayjs": {
       "src": "../../../../../node_modules/dayjs/dayjs.min.js",
       "file": "dayjs.js",
-      "fileHash": "a1f98849",
+      "fileHash": "9600cd85",
       "needsInterop": true
     },
     "echarts": {
       "src": "../../../../../node_modules/echarts/index.js",
       "file": "echarts.js",
-      "fileHash": "0ea54dde",
+      "fileHash": "2ab9b1e4",
+      "needsInterop": false
+    },
+    "uuid": {
+      "src": "../../../../../node_modules/uuid/dist/index.js",
+      "file": "uuid.js",
+      "fileHash": "87f5bf8a",
       "needsInterop": false
     }
   },
