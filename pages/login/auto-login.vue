@@ -210,13 +210,118 @@ const handleRetry = () => {
     // 重新处理
     handleRouteParams()
 }
+// 判断当前终端类型 PC、平板、手机
+const detectDeviceType = () => {
+    const ua = navigator.userAgent;
+    const screenWidth = window.screen.width;
+    const screenHeight = window.screen.height;
+    const touchPoints = navigator.maxTouchPoints || 0;
+    const hasTouch = touchPoints > 0 || "ontouchstart" in window;
 
+    // 计算设备像素比和估算物理尺寸
+    const pixelRatio = window.devicePixelRatio || 1;
+    const physicalDiagonal = Math.sqrt(
+        Math.pow(screenWidth / pixelRatio, 2) +
+        Math.pow(screenHeight / pixelRatio, 2)
+    ) / 160; // 160ppi 为标准，估算英寸
+
+    // 1. 先检测明确标识，明确平板UA
+    if (/iPad|Tablet|PlayBook|Silk|Kindle|KFTT|KFOT|SM-T|GT-P|SGP/i.test(ua)) {
+        return "tablet";
+    }
+
+    // 2. 检测iPadOS伪装Mac，检测到iPad
+    if (/Macintosh/i.test(ua) && hasTouch && screenWidth >= 768) {
+        return "tablet";
+    }
+
+    // 3. Android平板（有Android但没有Mobile标识，且宽度足够大）
+    if (/Android/i.test(ua) && !/Mobile/i.test(ua) && screenWidth >= 600) {
+        return "tablet";
+    }
+
+    // 4. 手机检测（包含各种手机标识）
+    if (/Mobi|iPhone|iPod|BlackBerry|Windows Phone|Opera Mini|IEMobile|WPDesktop|Android.*Mobile|Mobile.*Android/i.test(ua)) {
+        // // 排除大屏手机（物理尺寸 > 7寸）
+        // if (physicalDiagonal > 7 && screenWidth >= 600) {
+        //     console.log('大屏手机，按平板处理');
+        //     return "tablet";
+        // }
+        return "mobile";
+    }
+
+    // 5. 根据屏幕尺寸和触摸能力综合判断
+    if (hasTouch) {
+        // 小屏带触摸 - 判定为手机
+        if (screenWidth < 600) {
+            return "mobile";
+        }
+
+        // 中屏带触摸 - 需要进一步判断
+        if (screenWidth >= 600 && screenWidth <= 1366) {
+            const aspectRatio = screenWidth / screenHeight;
+            const isTabletRatio = aspectRatio > 1.2 && aspectRatio < 1.8;
+
+            // 物理尺寸判断，中屏触屏 + 物理尺寸 >= 7寸，判为平板
+            if (physicalDiagonal >= 7) {
+                return "tablet";
+            }
+
+            // 典型平板比例，中屏触屏 + 平板比例，判为平板
+            if (isTabletRatio) {
+                return "tablet";
+            }
+
+            // 检查是否为Windows设备，Windows触屏设备，判为桌面PC
+            if (/Windows|Win64|WOW64/i.test(ua)) {
+                return "desktop";
+            }
+
+            console.log('中屏触屏但不符合平板特征，判为手机');
+            return "mobile";
+        }
+    }
+
+    // 6. 大屏无触摸 - 判为桌面
+    if (screenWidth > 1024) {
+        return "desktop";
+    }
+
+    // 7. 默认返回 - mobile
+    return "mobile";
+};
+
+// 让平板用户选择
+const showDeviceChoiceDialog = () => {
+    uni.showModal({
+        title: '选择登录方式',
+        content: '检测到您使用的是平板设备，请选择登录版本',
+        confirmText: '手机版',
+        cancelText: '电脑版',
+        success: (res) => {
+            if (res.confirm) {
+                // 选择手机版
+                handleRouteParams()
+            } else {
+                // 选择电脑版
+                window.location.href = 'http://sys.hexianzhu.com/autoLogin'
+            }
+        }
+    })
+}
 // 生命周期
 onMounted(() => {
     console.log('H5自动登录页面挂载')
     urlInfo.value = window.location.href
     locationState.value = CALLBACK_URL
-    handleRouteParams()
+    const deviceType = detectDeviceType();
+    console.log('设备类型:', deviceType)
+    if (deviceType === 'mobile') {
+        handleRouteParams()
+    } else {
+        // 平板和PC端都重定向到PC端地址
+        window.location.href = 'http://sys.hexianzhu.com/autoLogin'
+    }
 })
 
 onUnmounted(() => {
