@@ -77,8 +77,8 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import dayjs from 'dayjs'
-import SvgRing from '@/components/svg-ring/svg-ring.vue'
-import LoadingMask from '@/components/loading-mask/loading-mask.vue'
+import SvgRing from '@/components/svg-ring/index.vue'
+import LoadingMask from '@/components/loading-mask/index.vue'
 import { largeScreenApi } from '@/common/api.js'
 import { formatNumber } from '@/utils/common.js'
 const props = defineProps({

@@ -95,8 +95,8 @@
 </template>
 
 <script setup>
-import CustomNavbar from '@/components/custom-navbar/custom-navbar.vue'
-import ProjectSelectPopup from '@/pages/index/project-select-popup.vue'
+import CustomNavbar from '@/components/custom-navbar/index.vue'
+import ProjectSelectPopup from '@/components/project-select-popup/index.vue'
 import GoalAchieved from '@/pages/index/components/goal-achieved.vue'
 import AchievementRate from '@/pages/index/components/achievement-rate.vue'
 import ConversionMetrics from '@/pages/index/components/conversion-metrics.vue'
@@ -389,7 +389,7 @@ onMounted(async () => {
 	.form-container {
 		display: flex;
 		flex-direction: column;
-		gap: 48rpx;
+		gap: 40rpx;
 
 		.form-item {
 			.item-label {

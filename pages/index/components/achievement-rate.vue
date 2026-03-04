@@ -51,7 +51,7 @@
 import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import * as echarts from 'echarts'
 import dayjs from 'dayjs'
-import LoadingMask from '@/components/loading-mask/loading-mask.vue'
+import LoadingMask from '@/components/loading-mask/index.vue'
 import { largeScreenApi } from '@/common/api.js'
 import { formatNumber } from '@/utils/common.js'
 // 定义 props

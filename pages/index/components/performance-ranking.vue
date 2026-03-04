@@ -46,7 +46,7 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import LoadingMask from '@/components/loading-mask/loading-mask.vue'
+import LoadingMask from '@/components/loading-mask/index.vue'
 import dayjs from 'dayjs'
 import { largeScreenApi } from '@/common/api.js'
 
