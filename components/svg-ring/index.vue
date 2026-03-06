@@ -8,7 +8,8 @@
             <!-- 进度部分叠加在上面 -->
             <circle class="progress-ring" :cx="size / 2" :cy="size / 2" :r="radius" fill="none" :stroke="color"
                 :stroke-width="strokeWidth" stroke-linecap="round"
-                :stroke-dasharray="`${progressCircumference} ${circumference}`" transform="rotate(-90, 100, 100)" />
+                :stroke-dasharray="`${progressCircumference} ${circumference}`"
+                :transform="`rotate(-90, ${size / 2}, ${size / 2})`" />
         </svg>
         <view class="ring-content">
             <text class="ring-value" v-if="isFixed">{{ fixedProgress }}%</text>
@@ -62,7 +63,11 @@ const props = defineProps({
     }
 })
 
-const radius = computed(() => props.size / 2 - props.strokeWidth / 2)
+const radius = computed(() => {
+    const maxRadius = props.size / 2 - props.strokeWidth / 2
+    // 确保半径至少为 strokeWidth（避免圆环重叠或显示异常）
+    return Math.max(maxRadius, props.strokeWidth)
+})
 const circumference = computed(() => 2 * Math.PI * radius.value)
 // 计算进度部分对应的周长
 const progressCircumference = computed(() => circumference.value * props.progress / 100)
