@@ -13,6 +13,13 @@
 				"navigationBarTitleText": "自动登录",
 				"navigationStyle": "custom"
 			}
+		},
+		{
+			"path": "pages/report/index",
+			"style": {
+				"navigationBarTitleText": "报表",
+				"navigationStyle": "custom"
+			}
 		}
 	],
 	"globalStyle": {
