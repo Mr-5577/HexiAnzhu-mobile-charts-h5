@@ -1,11 +1,11 @@
 <template>
 	<view class="home-page">
 		<!-- 固定导航栏 -->
-		<custom-navbar title="销售驾驶舱" :show-back="false" fixed :backgroundColor="navbarBgColor"
-			:title-color="navbarTitleColor" :translucent="true" :border-bottom="showNavBorder">
+		<custom-navbar title="销售驾驶舱" :show-left="true" :show-more-menu="true" :show-right="true" fixed
+			:translucent="true" :border-bottom="showNavBorder">
 			<template #right>
 				<view @click="openSearchPopup">
-					<uni-icons type="search" size="20" color="#333" />
+					<uni-icons type="search" size="22" color="#333" />
 				</view>
 			</template>
 		</custom-navbar>
@@ -14,39 +14,37 @@
 		<scroll-view class="scroll-container" :style="contentTopStyle" scroll-y :refresher-enabled="true"
 			:refresher-triggered="refresherTriggered" refresher-default-style="none" refresher-background="#fff"
 			@refresherrefresh="onRefresh" @refresherpulling="onPulling" @refresherrestore="onRestore" @scroll="onScroll"
-			:show-scrollbar="false" :scroll-top="scrollTopVal" :scroll-with-animation="true">
-			<!-- 下拉刷新区域 -->
-			<view class="refresher-container" :style="{ height: pullHeight + 'px' }">
-				<view class="refresher-content" :class="{ refreshing: refresherTriggered }">
-					<view class="loading-animation" v-if="refresherTriggered">
-						<view class="spinner">
-							<view class="spinner-dot" v-for="i in 5" :key="i"
-								:style="{ 'animationDelay': (i - 1) * 0.1 + 's' }">
-							</view>
-						</view>
-					</view>
-					<text class="refresh-text">{{ refreshText }}</text>
-				</view>
-			</view>
+			:show-scrollbar="false" :scroll-top="scrollTopVal" :scroll-with-animation="true" :lower-threshold="30"
+			@scrolltolower="onScrollToLower">
+			<!-- 下拉刷新状态 -->
+			<pull-down-refresh :pull-height="pullHeight" :refresher-triggered="refresherTriggered"
+				:refresh-text="refreshText" />
 
 			<!-- 主内容 -->
-			<view class="content">
+			<view class="main-content">
 				<!-- 渠道及转化 -->
-				<achievement-rate ref="achievementRateRef" :projectIds="projectIds" :dateTime="dateTime"></achievement-rate>
+				<achievement-rate ref="achievementRateRef" :projectIds="projectIds"
+					:dateTime="dateTime"></achievement-rate>
 				<!-- 目标达成统计 -->
 				<goal-achieved ref="goalAchievedRef" :projectIds="projectIds" :dateTime="dateTime"></goal-achieved>
 				<!-- 业绩走势情况 -->
-				<performance-trend ref="performanceTrendRef" :projectIds="projectIds" :dateTime="dateTime"></performance-trend>
+				<performance-trend ref="performanceTrendRef" :projectIds="projectIds"
+					:dateTime="dateTime"></performance-trend>
 				<!-- 转化指标情况 -->
-				<conversion-metrics ref="conversionMetricsRef" :projectIds="projectIds" :dateTime="dateTime"></conversion-metrics>
+				<conversion-metrics ref="conversionMetricsRef" :projectIds="projectIds"
+					:dateTime="dateTime"></conversion-metrics>
 				<!-- 业务指标 -->
-				<financial-statistics ref="financialStatisticsRef" :projectIds="projectIds" :dateTime="dateTime"></financial-statistics>
+				<financial-statistics ref="financialStatisticsRef" :projectIds="projectIds"
+					:dateTime="dateTime"></financial-statistics>
 				<!-- 资产与应收统计 -->
-				<structural-statistic ref="structuralStatisticRef" :projectIds="projectIds" :dateTime="dateTime"></structural-statistic>
+				<structural-statistic ref="structuralStatisticRef" :projectIds="projectIds"
+					:dateTime="dateTime"></structural-statistic>
 				<!-- 业绩排名统计 -->
-				<performance-ranking ref="performanceRankingRef" :projectIds="projectIds" :dateTime="dateTime"></performance-ranking>
+				<performance-ranking ref="performanceRankingRef" :projectIds="projectIds"
+					:dateTime="dateTime"></performance-ranking>
+
 				<view class="bottom-tips" v-if="showBottomTips">
-					<text>—— 我是有底线的 ——</text>
+					<text>—— 已加载全部 ——</text>
 				</view>
 			</view>
 		</scroll-view>
@@ -104,6 +102,7 @@ import PerformanceTrend from '@/pages/index/components/performance-trend.vue'
 import FinancialStatistics from '@/pages/index/components/financial-statistics.vue'
 import StructuralStatistic from '@/pages/index/components/structural-statistic.vue'
 import PerformanceRanking from '@/pages/index/components/performance-ranking.vue'
+import PullDownRefresh from '@/components/pull-down-refresh/index.vue'
 import dayjs from 'dayjs'
 import { ref, computed, onMounted } from 'vue'
 import { largeScreenApi } from '@/common/api.js'
@@ -118,8 +117,6 @@ const scrollTop = ref(0)
 const scrollTopVal = ref(0) // 用于控制scroll-view滚动位置
 const showScrollTopBtn = ref(false)
 const showBottomTips = ref(false)
-const navbarBgColor = ref('rgba(255, 255, 255, 0)')
-const navbarTitleColor = ref('#ffffff')
 const showNavBorder = ref(false)
 const searchPopupRef = ref(null)
 const projectSelectPopupRef = ref(null)
@@ -151,11 +148,6 @@ const onRefresh = async () => {
 		dateTime.value = dayjs().format('YYYY-MM-DD')
 		await getProjectData()
 		refreshText.value = '刷新成功,正在请求数据...'
-		// uni.showToast({
-		// 	title: '刷新成功',
-		// 	icon: 'success',
-		// 	duration: 1000
-		// })
 		setTimeout(() => {
 			// 手动触发子组件加载数据
 			refreshAllComponents();
@@ -208,17 +200,14 @@ const onScroll = (e) => {
 	scrollTop.value = e.detail.scrollTop
 	// 控制导航栏透明度
 	const alpha = Math.min(scrollTop.value / 100, 1)
-	navbarTitleColor.value = alpha > 0.5 ? '#333333' : '#ffffff'
 	showNavBorder.value = alpha > 0.8
 	// 显示/隐藏返回顶部按钮
 	showScrollTopBtn.value = scrollTop.value > 50
-
-	// 判断是否到达底部
-	const { scrollHeight, scrollViewHeight, scrollTop: scrollTopPos } = e.detail
-	if (scrollHeight - scrollViewHeight - scrollTopPos < 50) {
-		showBottomTips.value = true
-		loadMoreData()
-	}
+}
+// 距离底部30px触发，配合lower-threshold属性
+const onScrollToLower = () => {
+	showBottomTips.value = true
+	loadMoreData()
 }
 const loadMoreData = () => console.log('加载更多数据...')
 
@@ -305,72 +294,7 @@ onMounted(async () => {
 	}
 }
 
-.refresher-container {
-	overflow: hidden;
-	transition: height 0.3s ease;
-	display: flex;
-	justify-content: center;
-	align-items: flex-end;
-
-	.refresher-content {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		height: 100%;
-		transition: transform 0.3s ease;
-
-		&.refreshing {
-			animation: pulse 1.5s ease-in-out infinite;
-		}
-
-		.loading-animation {
-			.spinner {
-				display: flex;
-				align-items: center;
-				justify-content: center;
-				height: 40rpx;
-
-				.spinner-dot {
-					width: 15rpx;
-					height: 15rpx;
-					border-radius: 50%;
-					margin: 0 6rpx;
-					animation: dot-bounce 1.4s ease-in-out infinite both;
-
-					&:nth-child(1) {
-						background-color: #36cfc9;
-					}
-
-					&:nth-child(2) {
-						background-color: #f759ab;
-					}
-
-					&:nth-child(3) {
-						background-color: #999999;
-					}
-
-					&:nth-child(4) {
-						background-color: #fac858;
-					}
-
-					&:nth-child(5) {
-						background-color: #5470c6;
-					}
-				}
-			}
-		}
-
-		.refresh-text {
-			font-size: 24rpx;
-			color: #999999;
-			margin-top: 10rpx;
-			transition: color 0.3s ease;
-		}
-	}
-}
-
-.content {
+.main-content {
 	min-height: 100vh;
 	padding: 30rpx;
 	box-sizing: border-box;
@@ -379,6 +303,7 @@ onMounted(async () => {
 	flex-direction: column;
 }
 
+// 查询表单样式
 .search-popup-form {
 	width: 70vw;
 	height: 100%;
@@ -459,7 +384,6 @@ onMounted(async () => {
 				}
 
 				.query-btn {
-					// background: linear-gradient(135deg, #36cfc9 0%, #f759ab 100%);
 					background: linear-gradient(135deg, #409eff 0%, #626aef 100%);
 					color: #fff;
 				}
@@ -469,20 +393,18 @@ onMounted(async () => {
 }
 
 .bottom-tips {
-	padding: 40rpx 0;
 	text-align: center;
 	font-size: 26rpx;
-	color: #cccccc;
+	color: #999;
 }
 
 .scroll-to-top {
 	position: fixed;
 	right: 32rpx;
-	bottom: 100rpx;
+	bottom: 80rpx;
 	width: 70rpx;
 	height: 70rpx;
 	border-radius: 50%;
-	// background: linear-gradient(135deg, #f06292 0%, #ff8a80 100%);
 	background: linear-gradient(135deg, #409eff 0%, #626aef 100%);
 	backdrop-filter: blur(10rpx);
 	display: flex;
@@ -490,33 +412,6 @@ onMounted(async () => {
 	justify-content: center;
 	z-index: 10;
 	transition: all 0.3s ease;
-}
-
-@keyframes dot-bounce {
-
-	0%,
-	80%,
-	100% {
-		transform: scale(0);
-		opacity: 0.6;
-	}
-
-	40% {
-		transform: scale(1);
-		opacity: 1;
-	}
-}
-
-@keyframes pulse {
-
-	0%,
-	100% {
-		opacity: 1;
-	}
-
-	50% {
-		opacity: 0.7;
-	}
 }
 
 ::v-deep .uni-popup__wrapper--right {
