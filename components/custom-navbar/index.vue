@@ -6,47 +6,73 @@
 
         <!-- 导航栏内容 -->
         <view class="navbar-content">
-            <!-- 左侧：返回按钮 -->
-            <view v-if="showBack" class="nav-left" :class="{ 'has-content': showBack }" @click="handleBack">
-                <view class="back-container">
-                    <!-- <text class="back-icon iconfont icon-back"></text> -->
-                    <uni-icons type="back" size="20" color="#333"></uni-icons>
-                    <text v-if="backText" class="back-text">{{ backText }}</text>
-                </view>
+            <!-- 左侧：返回按钮或者其它内容 -->
+            <view v-if="showLeft" class="nav-left" :class="{ 'has-content': showLeft }">
+                <slot name="left">
+                    <template v-if="showBack">
+                        <!-- 返回按钮 -->
+                        <view class="back-container" @click="handleBack">
+                            <uni-icons type="back" size="20" color="#333"></uni-icons>
+                            <text v-if="backText" class="back-text">{{ backText }}</text>
+                        </view>
+                    </template>
+                    <template v-if="showMoreMenu">
+                        <!-- 更多图标 -->
+                        <view class="more-container" @click="toggleMenu">
+                            <uni-icons type="bars" size="22" color="#333"></uni-icons>
+                        </view>
+                    </template>
+                </slot>
             </view>
 
             <!-- 中间：标题 -->
             <view class="nav-center" :class="{
-                'left-only': showBack && !hasRightContent,
-                'right-only': !showBack && hasRightContent,
-                'both-sides': showBack && hasRightContent,
-                'center-only': !showBack && !hasRightContent
+                'left-only': showLeft && !hasRightContent,
+                'right-only': !showLeft && hasRightContent,
+                'both-sides': showLeft && hasRightContent,
+                'center-only': !showLeft && !hasRightContent
             }">
                 <text class="nav-title">{{ title }}</text>
+                <text class="nav-sub-title" v-if="subTitle">{{ subTitle }}</text>
             </view>
 
             <!-- 右侧：操作区域 -->
-            <view class="nav-right" :class="{ 'has-content': hasRightContent }">
+            <view v-if="showRight" class="nav-right" :class="{ 'has-content': hasRightContent }">
                 <slot name="right">
                     <!-- 默认右侧内容 -->
-                    <view v-if="showRight" class="home-btn" @click="goHome">
-                        <uni-icons type="home" size="20" color="#333"></uni-icons>
+                    <view class="home-btn" @click="goHome">
+                        <uni-icons type="home-filled" size="20" color="#333"></uni-icons>
                     </view>
                 </slot>
             </view>
         </view>
     </view>
+
+    <!-- Teleport 组件允许把模版放在DOM的其他位置上。弹窗菜单（放到body，不被裁剪） -->
+    <Teleport to="body">
+        <view v-if="showMoreMenu" class="popup-mask" v-show="menuVisible" @click="menuVisible = false">
+            <view class="popup-menu" :style="menuStyle" :class="{ 'menu-visible': menuVisible }" @click.stop>
+                <view class="menu-arrow"></view>
+                <view class="menu-item" v-for="(item, index) in menuItems" :key="index"
+                    @click="handleMenuItemClick(item)">
+                    <text>{{ item.name }}</text>
+                </view>
+            </view>
+        </view>
+    </Teleport>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, useSlots } from 'vue'
+import { ref, computed, onMounted, useSlots, onUnmounted } from 'vue'
 
 const props = defineProps({
     title: { type: String, default: '' },
-    backgroundColor: { type: String, default: '#ffffff' },
-    titleColor: { type: String, default: '#333333' },
-    showBack: { type: Boolean, default: true },
+    subTitle: { type: String, default: '' },
+    backgroundColor: { type: String, default: 'rgba(255, 255, 255, 0)' },
+    showLeft: { type: Boolean, default: true },
+    showBack: { type: Boolean, default: false },
     backText: { type: String, default: '返回' },
+    showMoreMenu: { type: Boolean, default: false },
     showRight: { type: Boolean, default: false },
     fixed: { type: Boolean, default: true },
     translucent: { type: Boolean, default: false },
@@ -58,15 +84,19 @@ const props = defineProps({
 const emit = defineEmits(['back', 'home'])
 const slots = useSlots()
 
+// ref
 const statusBarHeight = ref(0)
 const systemInfo = ref({})
+const menuVisible = ref(false)
+const menuItems = ref([
+    { name: '销售驾驶舱', url: '/pages/index/index' },
+    { name: '报表', url: '/pages/report/index' },
+])
 
 // 检查是否有右侧内容（包括默认的home按钮和slot内容）
 const hasRightContent = computed(() => {
     // 如果有插槽内容，则显示插槽
-    if (!!slots.right) {
-        return true
-    }
+    if (!!slots.right) return true
     // 如果没有插槽内容，则检查showRight属性
     return props.showRight
 })
@@ -94,8 +124,11 @@ const navbarStyle = computed(() => {
     return style
 })
 
-onMounted(() => {
-    initSystemInfo()
+const menuStyle = computed(() => {
+    return {
+        top: (statusBarHeight.value + 44) + 'px',
+        left: '20rpx'
+    }
 })
 
 const initSystemInfo = () => {
@@ -112,29 +145,49 @@ const px2rpx = (px) => {
 const handleBack = () => {
     const pages = getCurrentPages()
     if (pages.length > 1) {
-        uni.navigateBack({
-            delta: 1,
-            animationType: 'pop-out',
-            animationDuration: 300
-        })
+        uni.navigateBack({ delta: 1 })
     } else {
-        uni.switchTab({
-            url: '/pages/index/index'
-        })
+        uni.redirectTo({ url: '/pages/index/index' })
     }
     emit('back')
 }
 
 const goHome = () => {
+    uni.redirectTo({ url: '/pages/index/index' })
     emit('home')
 }
+
+const toggleMenu = () => {
+    menuVisible.value = !menuVisible.value
+}
+const handleMenuItemClick = (item) => {
+    menuVisible.value = false
+
+    // 获取当前页面路径
+    const pages = getCurrentPages()
+    const currentPage = pages[pages.length - 1]
+    // 获取当前页面路径，移除开头的 '/' 进行比较
+    const currentUrl = '/' + currentPage.route
+    // 如果点击的路径与当前路径一致，则不跳转
+    if (currentUrl === item.url) return
+
+    // 跳转到目标页面
+    uni.navigateTo({ url: item.url })
+}
+
+onMounted(() => {
+    initSystemInfo()
+})
+onUnmounted(() => {
+    menuVisible.value = false
+});
 </script>
 
 <style lang="scss" scoped>
 .custom-navbar {
     width: 100%;
     box-sizing: border-box;
-    overflow: hidden;
+    // overflow: hidden;
 
     &.navbar-fixed {
         position: fixed;
@@ -174,13 +227,7 @@ const goHome = () => {
                 display: flex;
                 align-items: center;
                 padding: 8rpx 0;
-
-                .back-icon {
-                    font-size: 40rpx;
-                    line-height: 1;
-                    color: #333333;
-                    margin-right: 8rpx;
-                }
+                position: relative;
 
                 .back-text {
                     font-size: 28rpx;
@@ -197,6 +244,7 @@ const goHome = () => {
             top: 0;
             bottom: 0;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             text-align: center;
@@ -233,9 +281,20 @@ const goHome = () => {
             }
 
             .nav-title {
-                font-size: 34rpx;
+                font-size: 32rpx;
                 font-weight: 600;
                 color: #333333;
+                line-height: 1.2;
+                max-width: 100%;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                pointer-events: none;
+            }
+
+            .nav-sub-title {
+                font-size: 20rpx;
+                color: #333;
                 line-height: 1.2;
                 max-width: 100%;
                 overflow: hidden;
@@ -265,13 +324,78 @@ const goHome = () => {
                 width: 60rpx;
                 height: 60rpx;
                 border-radius: 50%;
-                background-color: rgba(0, 0, 0, 0.05);
 
                 .icon-home {
                     font-size: 36rpx;
                     color: #333333;
                 }
             }
+        }
+    }
+}
+
+// 遮罩层（点击空白关闭菜单）
+.popup-mask {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    background: rgba(208, 210, 211, 0.1);
+}
+
+// 菜单主体
+.popup-menu {
+    position: absolute;
+    // top: 80rpx;
+    // left: 20rpx;
+    min-width: 260rpx;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(10rpx);
+    -webkit-backdrop-filter: blur(10rpx);
+    border-radius: 20rpx;
+    box-shadow: 0 6rpx 30rpx rgba(0, 0, 0, 0.08);
+    z-index: 1001;
+    opacity: 0;
+    transform: translateY(-8rpx);
+    transition: all 0.25s ease;
+    pointer-events: none;
+    border: 1rpx solid rgba(255, 255, 255, 0.3);
+
+    // 显示状态
+    &.menu-visible {
+        opacity: 1;
+        transform: translateY(0);
+        pointer-events: auto;
+    }
+
+    // 小三角箭头
+    .menu-arrow {
+        position: absolute;
+        top: -16rpx;
+        left: 36rpx;
+        width: 0;
+        height: 0;
+        border-left: 16rpx solid transparent;
+        border-right: 16rpx solid transparent;
+        border-bottom: 16rpx solid #fff;
+    }
+
+    // 菜单项
+    .menu-item {
+        padding: 20rpx 30rpx;
+        font-size: 28rpx;
+        color: #333;
+        border-bottom: 1rpx solid #f0f0f0;
+        white-space: nowrap;
+
+        &:last-child {
+            border-bottom: none;
+        }
+
+        &:active {
+            background-color: #f7f7f7;
         }
     }
 }
@@ -286,7 +410,6 @@ const goHome = () => {
             .nav-left {
                 .back-container {
 
-                    .back-icon,
                     .back-text {
                         color: #ffffff;
                     }
@@ -311,5 +434,4 @@ const goHome = () => {
         }
     }
 }
-
 </style>
