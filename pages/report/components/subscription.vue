@@ -1,8 +1,8 @@
-<!-- 溢价、退房、挞定 -->
+<!-- 认购、签约、回款 -->
 <template>
     <view class="conversion-metrics">
         <view class="metrics-header">
-            <text class="metrics-title">溢价、退房、挞定</text>
+            <text class="metrics-title">认购、签约、回款</text>
         </view>
         <!-- 六宫格数据展示区域 -->
         <view class="data-grid">
@@ -77,51 +77,73 @@ const fetchData = async () => {
         isRequesting.value = false;
     }
 };
-
 const displayData = computed(() => {
     let listData = []
     if (props.sumData) {
         // 有数据时
         let targetData = {
-            premium: 0, // 溢价
-            checkOutNum: 0, // 退房
-            taDingNum: 0, // 挞定
+            orderNum: 0, // 认购
+            signNum: 0, // 签约
+            recNum: 0, // 回款
+            orderTask: 0, // 认购目标
+            signTask: 0, // 签约目标
+            collectTask: 0, // 回款目标
         }
         switch (props.reportType) {
             // 日报
             case 3:
-                targetData.premium = props.sumData.dayPemMoney || 0
-                targetData.checkOutNum = props.sumData.dayCheckoutNum || 0
-                targetData.taDingNum = 0
+                targetData.orderNum = props.sumData.dayOrderNum || 0
+                targetData.signNum = props.sumData.daySignNum || 0
+                targetData.recNum = props.sumData.dayRecMoney || 0
+
+                targetData.orderTask = 0
+                targetData.signTask = 0
+                targetData.collectTask = 0
                 break;
             // 月报
             case 1:
-                targetData.premium = props.sumData.totalPemMoney || 0
-                targetData.checkOutNum = props.sumData.totalCheckoutNum || 0
-                targetData.taDingNum = 0
+                targetData.orderNum = props.sumData.totalOrderNum || 0
+                targetData.signNum = props.sumData.totalSignNum || 0
+                targetData.recNum = props.sumData.totalRecMoney || 0
+
+                targetData.orderTask = props.sumData.orderTask || 0
+                targetData.signTask = props.sumData.signTask || 0
+                targetData.collectTask = props.sumData.collectTask || 0
                 break;
             // 年报
             case 0:
-                targetData.premium = props.sumData.totalPemMoney || 0
-                targetData.checkOutNum = props.sumData.totalCheckoutNum || 0
-                targetData.taDingNum = 0
+                targetData.orderNum = props.sumData.totalOrderNum || 0
+                targetData.signNum = props.sumData.totalSignNum || 0
+                targetData.recNum = props.sumData.totalRecMoney || 0
+
+                targetData.orderTask = props.sumData.orderTask || 0
+                targetData.signTask = props.sumData.signTask || 0
+                targetData.collectTask = props.sumData.collectTask || 0
                 break;
             default:
                 break;
         }
         listData = [
-            { label: '溢价', value: targetData.premium, unit: '万' },
-            { label: '退房', value: targetData.checkOutNum, unit: '套' },
-            { label: '挞定', value: targetData.taDingNum, unit: '套' },
+            { label: '认购', value: targetData.orderNum, unit: '套', show: true },
+            { label: '签约', value: targetData.signNum, unit: '套', show: true },
+            { label: '回款', value: targetData.recNum, unit: '万', show: true },
+            // 日报没有目标
+            { label: '认购目标', value: targetData.orderTask, unit: '套', show: props.reportType !== 3 },
+            { label: '签约目标', value: targetData.signTask, unit: '套', show: props.reportType !== 3 },
+            { label: '回款目标', value: targetData.collectTask, unit: '万', show: props.reportType !== 3 }
         ]
     } else {
         listData = [
-            { label: '溢价', value: 0, unit: '万' },
-            { label: '退房', value: 0, unit: '套' },
-            { label: '挞定', value: 0, unit: '套' },
+            { label: '认购', value: 0, unit: '套', show: true },
+            { label: '签约', value: 0, unit: '套', show: true },
+            { label: '回款', value: 0, unit: '万', show: true },
+            // 日报没有目标
+            { label: '认购目标', value: 0, unit: '套', show: props.reportType !== 3 },
+            { label: '签约目标', value: 0, unit: '套', show: props.reportType !== 3 },
+            { label: '回款目标', value: 0, unit: '万', show: props.reportType !== 3 }
         ]
     }
-    return listData
+    return listData.filter((item) => item.show)
 })
 
 onMounted(() => { })
@@ -155,7 +177,6 @@ defineExpose({ refreshData: fetchData })
         .metrics-title {
             font-size: 30rpx;
             font-weight: 700;
-            // background: linear-gradient(135deg, #4facfe 0%, #fa709a 100%);
             background: linear-gradient(135deg, #409eff 0%, #626aef 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -182,7 +203,7 @@ defineExpose({ refreshData: fetchData })
     .data-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
-        gap: 30rpx 15rpx;
+        gap: 20rpx 15rpx;
 
         .grid-item {
             text-align: center;

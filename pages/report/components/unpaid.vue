@@ -1,9 +1,9 @@
 <!-- 饼状图 -->
 <template>
-    <view class="structural-statistic">
+    <view class="unpaid-statistic">
         <!-- 标题区域 -->
         <view class="chart-header">
-            <text class="chart-title">未回款占比</text>
+            <text class="chart-title">未回款统计</text>
         </view>
 
         <!-- 图表区域 -->
@@ -16,38 +16,63 @@
 </template>
 
 <script setup>
-import { ref, shallowRef, onMounted, onUnmounted, computed, nextTick } from 'vue'
+import { ref, shallowRef, onMounted, onUnmounted, computed, nextTick, watch } from 'vue'
 import * as echarts from 'echarts'
 import LoadingMask from '@/components/loading-mask/index.vue'
 
 const props = defineProps({
+    // 选择的项目ID
     projectIds: {
         type: Array,
         default: () => []
     },
+    // 选择的时间日期
     dateTime: {
         type: String,
         default: ''
+    },
+    // 考核口径，默认全口径，0-全部; 1-业绩
+    caliberType: {
+        type: Number,
+        default: 0
+    },
+    // 报表类型，默认日报，0-年；1-月；2-周；3-日
+    reportType: {
+        type: Number,
+        default: 3
+    },
+    // 统计数据
+    sumData: {
+        type: Object,
+        default: () => null
     }
 })
 
 // loading状态
 const loading = ref(false)
+// 防止重复请求
+const isRequesting = ref(false)
+
 const chartInstance = shallowRef(null)
 const structuralRef = ref(null)
 
-// 静态数据 - 资产与应收统计
-const staticData = [
-    { name: '住宅', value: 1250 },
-    { name: '商业', value: 680 },
-    { name: '车位', value: 420 },
-    { name: '办公', value: 280 },
-    { name: '其他', value: 120 }
-]
+const proportionData = computed(() => {
+    if (props.sumData) {
+        return [
+            { name: '已签约', value: props.sumData.signNum || 0 },
+            { name: '未签约', value: props.sumData.notSignNum || 0 },
+        ]
+    } else {
+        return [
+            { name: '已签约', value: 0 },
+            { name: '未签约', value: 0 },
+        ]
 
+    }
+})
 // 计算总数
 const total = computed(() => {
-    return staticData.reduce((sum, item) => sum + item.value, 0)
+    return proportionData.value.reduce((sum, item) => sum + item.value, 0)
 })
 
 // 生成颜色数组
@@ -57,7 +82,7 @@ const generateColors = () => {
         '#73c0de', '#3ba272', '#fc8452', '#9a60b4',
         '#ea7ccc', '#4da1ff', '#ff9f7f', '#8378ea'
     ]
-    return staticData.map((_, index) => baseColors[index % baseColors.length])
+    return proportionData.value.map((_, index) => baseColors[index % baseColors.length])
 }
 
 // 图表配置
@@ -71,7 +96,7 @@ const chartOption = computed(() => ({
     },
     series: [
         {
-            name: '资产与应收统计',
+            name: '未回款统计',
             type: 'pie',
             radius: ['35%', '55%'],
             center: ['50%', '50%'],
@@ -94,7 +119,10 @@ const chartOption = computed(() => ({
                 overflow: 'break',
                 hideOverlap: false,
                 formatter: function (params) {
-                    const percent = ((params.value / total.value) * 100).toFixed(1)
+                    let percent = '0'
+                    if (total.value > 0) {
+                        percent = ((params.value / total.value) * 100).toFixed(1)
+                    }
                     return `{a|${params.name}}\n {b|${params.value}(${percent}%)}`
                 },
                 rich: {
@@ -129,7 +157,7 @@ const chartOption = computed(() => ({
                 length2: 14,
                 smooth: true
             },
-            data: staticData.map((item, index) => ({
+            data: proportionData.value.map((item, index) => ({
                 ...item,
                 itemStyle: {
                     color: generateColors()[index]
@@ -170,7 +198,9 @@ const handleResize = () => {
 
 // 模拟数据加载
 const fetchData = async () => {
+    if (isRequesting.value) return
     loading.value = true
+    isRequesting.value = true
     try {
         // 模拟延迟
         await new Promise(resolve => setTimeout(resolve, 300))
@@ -185,15 +215,22 @@ const fetchData = async () => {
         console.error("加载数据失败:", error)
     } finally {
         loading.value = false
+        isRequesting.value = false
     }
 }
+watch(
+    () => props.sumData,
+    (newData) => {
+        console.log('unpaid', newData)
+        nextTick(() => {
+            initChart()
+        })
+    },
+    { deep: true, immediate: true }
+)
 
-// 生命周期
 onMounted(() => {
     window.addEventListener('resize', handleResize)
-    nextTick(() => {
-        fetchData()
-    })
 })
 
 onUnmounted(() => {
@@ -202,13 +239,11 @@ onUnmounted(() => {
 })
 
 // 暴露方法给父组件
-defineExpose({
-    refreshData: fetchData
-})
+defineExpose({ refreshData: fetchData })
 </script>
 
 <style lang="scss" scoped>
-.structural-statistic {
+.unpaid-statistic {
     width: 100%;
     background: linear-gradient(135deg,
             rgba(255, 255, 255, 0.95) 0%,
@@ -264,13 +299,14 @@ defineExpose({
         opacity: 0;
         transform: translateY(10rpx);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
     }
 }
 
-.structural-statistic {
+.unpaid-statistic {
     animation: fadeIn 0.5s ease-out;
 }
 </style>

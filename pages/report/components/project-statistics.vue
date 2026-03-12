@@ -1,8 +1,8 @@
-<!-- 二级完成率 -->
+<!-- 城市项目统计 -->
 <template>
-    <view class="completion-rate">
-        <view class="metrics-header">
-            <text class="metrics-title">二级完成率</text>
+    <view class="project-statistics">
+        <view class="statistics-header">
+            <text class="metrics-title">城市项目统计</text>
         </view>
         <view class="echarts-info">
             <div class="info-right" ref="barChartRef"></div>
@@ -13,11 +13,11 @@
 </template>
 
 <script setup>
-import { ref, shallowRef, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, shallowRef, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import LoadingMask from '@/components/loading-mask/index.vue'
 import dayjs from 'dayjs'
 import * as echarts from 'echarts'
-import { largeScreenApi } from '@/common/api.js'
+import { formatNumber } from '@/utils/common.js'
 
 const props = defineProps({
     // 选择的项目ID
@@ -29,6 +29,20 @@ const props = defineProps({
     dateTime: {
         type: String,
         default: ''
+    },
+    // 考核口径，默认全口径，0-全部; 1-业绩
+    caliberType: {
+        type: Number,
+        default: 0
+    },
+    // 报表类型，默认日报，0-年；1-月；2-周；3-日
+    reportType: {
+        type: Number,
+        default: 3
+    },
+    projectData: {
+        type: Array,
+        default: () => []
     }
 })
 
@@ -40,10 +54,9 @@ const isRequesting = ref(false)
 const chartInstance = shallowRef(null)
 const barChartRef = ref(null)
 
-// 增加数据量 - 从3条增加到6条
 const chartData = ref({
-    categories: ['认购率', '签约率', '回款率', '到访率', '转化率', '复购率'],
-    values: [85, 62, 38, 76, 43, 29]
+    categories: [], // 城市名称
+    values: [] // 综合完成率
 })
 
 // 初始化图表
@@ -94,11 +107,18 @@ const initChart = () => {
                 }
             },
             axisLabel: {
-                fontSize: 10,
+                fontSize: 9,
                 color: '#666',
-                fontWeight: 500,
-                rotate: 0,
-                margin: 8
+                rotate: 30, // 旋转30度，避免重叠
+                margin: 12, // 增加边距
+                interval: 0, // 强制显示所有标签
+                // 超出长度截断显示
+                formatter: function (value) {
+                    if (value.length > 6) {
+                        return value.slice(0, 6) + '...'
+                    }
+                    return value
+                }
             },
         },
         yAxis: {
@@ -115,7 +135,7 @@ const initChart = () => {
                 }
             },
             axisLabel: {
-                fontSize: 10,
+                fontSize: 9,
                 color: '#999',
                 formatter: '{value}%'
             },
@@ -142,7 +162,7 @@ const initChart = () => {
                 name: '完成率',
                 type: 'bar',
                 data: chartData.value.values,
-                barWidth: 15,
+                barWidth: 12,
                 itemStyle: {
                     borderRadius: [10, 10, 6, 6], // 更大的圆角，让柱子更加圆润
                     color: {
@@ -197,6 +217,14 @@ const disposeChart = () => {
     }
 }
 
+// 重置数据
+const resetData = () => {
+    chartData.value = {
+        categories: [],
+        values: []
+    }
+}
+
 // 更新图表数据
 const updateChartData = (data) => {
     if (!chartInstance.value) return
@@ -222,7 +250,6 @@ const fetchData = async () => {
         endDate: dayjs(dateTime).endOf("month").format("YYYY-MM-DD") + " 23:59:59",
     };
     try {
-        // const res = await largeScreenApi.getCustomerComeInfo(params);
         await nextTick()
         initChart()
     } finally {
@@ -230,13 +257,37 @@ const fetchData = async () => {
         isRequesting.value = false;
     }
 };
+const processData = (data) => {
+    if (data && data.length > 0) {
+        // 处理数据
+        const rawData = data.reduce((acc, item) => {
+            acc.categories.push(item?.projName || '未知城市')
+            acc.values.push(formatNumber(item?.totalRate) || 0)
+            return acc
+        }, { categories: [], values: [], })
 
-// 监听页面显示/隐藏
-onMounted(() => {
-    window.addEventListener('resize', handleResize)
+        chartData.value = rawData
+    } else {
+        resetData()
+    }
     nextTick(() => {
         initChart()
     })
+}
+
+watch(
+    () => props.projectData,
+    (newData) => {
+        processData(newData)
+    },
+    { deep: true, immediate: true }
+)
+
+onMounted(() => {
+    window.addEventListener('resize', handleResize)
+    // nextTick(() => {
+    //     initChart()
+    // })
 })
 
 onUnmounted(() => {
@@ -250,13 +301,12 @@ onUnmounted(() => {
 })
 
 // 暴露方法给父组件
-defineExpose({
-    refreshData: fetchData
-})
+defineExpose({ refreshData: fetchData })
+
 </script>
 
 <style lang="scss" scoped>
-.completion-rate {
+.project-statistics {
     width: 100%;
     background: linear-gradient(135deg,
             rgba(255, 255, 255, 0.95) 0%,
@@ -266,7 +316,7 @@ defineExpose({
     box-sizing: border-box;
     position: relative;
 
-    .metrics-header {
+    .statistics-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -315,7 +365,7 @@ defineExpose({
 }
 
 /* 卡片进入动画 */
-.completion-rate {
+.project-statistics {
     animation: cardSlideIn 0.6s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 

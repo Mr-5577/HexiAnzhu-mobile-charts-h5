@@ -7,19 +7,19 @@
     "dayjs": {
       "src": "../../../../../node_modules/dayjs/dayjs.min.js",
       "file": "dayjs.js",
-      "fileHash": "9600cd85",
+      "fileHash": "285d96a6",
       "needsInterop": true
     },
     "echarts": {
       "src": "../../../../../node_modules/echarts/index.js",
       "file": "echarts.js",
-      "fileHash": "2ab9b1e4",
+      "fileHash": "ef1cef7b",
       "needsInterop": false
     },
     "uuid": {
       "src": "../../../../../node_modules/uuid/dist/index.js",
       "file": "uuid.js",
-      "fileHash": "87f5bf8a",
+      "fileHash": "1548e7ea",
       "needsInterop": false
     }
   },

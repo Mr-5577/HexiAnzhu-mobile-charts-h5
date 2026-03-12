@@ -145,6 +145,8 @@ const chartOption = computed(() => {
                     color: '#666',
                     fontSize: 11,
                     margin: 10,
+                    rotate: 30, // 旋转30度，避免重叠
+                    margin: 12, // 增加边距
                     // 横坐标标签显示优化
                     interval: getLabelInterval(chartData.value.dates.length),
                     formatter: function (value) {

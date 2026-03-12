@@ -6,7 +6,7 @@
         </view>
         <view class="echarts-info">
             <view class="info-left">
-                <svg-ring :label="'综合完成率'" :size="140" :strokeWidth="20" :progress="65" color="#5fa4ee"
+                <svg-ring :label="'综合完成率'" :size="140" :strokeWidth="15" :progress="completionRate" color="#86a0f1"
                     backgroundColor="rgba(136, 195, 255, 0.1)"></svg-ring>
             </view>
             <div class="info-right" ref="barChartRef"></div>
@@ -17,12 +17,12 @@
 </template>
 
 <script setup>
-import { ref, shallowRef, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, shallowRef, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import SvgRing from '@/components/svg-ring/index.vue'
 import LoadingMask from '@/components/loading-mask/index.vue'
-import dayjs from 'dayjs'
 import * as echarts from 'echarts'
-import { largeScreenApi } from '@/common/api.js'
+import { saleReportApi } from '@/common/api.js'
+import { formatNumber } from '@/utils/common.js'
 
 const props = defineProps({
     // 选择的项目ID
@@ -34,6 +34,21 @@ const props = defineProps({
     dateTime: {
         type: String,
         default: ''
+    },
+    // 考核口径，默认全口径，0-全部; 1-业绩
+    caliberType: {
+        type: Number,
+        default: 0
+    },
+    // 报表类型，默认日报，0-年；1-月；2-周；3-日
+    reportType: {
+        type: Number,
+        default: 3
+    },
+    // 统计数据
+    sumData: {
+        type: Object,
+        default: () => null
     }
 })
 
@@ -45,9 +60,10 @@ const isRequesting = ref(false)
 const chartInstance = shallowRef(null)
 const barChartRef = ref(null)
 
+const completionRate = ref(0)
 const chartData = ref({
     categories: ['成交率', '签约率', '回款率'],
-    values: [85, 62, 38]
+    values: [0, 0, 0]
 })
 
 // 初始化图表
@@ -105,7 +121,7 @@ const initChart = () => {
         },
         yAxis: {
             type: 'value',
-            max: 100,
+            // max: 100,
             min: 0,
             splitLine: {
                 show: true,
@@ -157,15 +173,15 @@ const initChart = () => {
                         x2: 0,
                         y2: 1,
                         colorStops: [
-                            { offset: 0, color: '#88c3ff' }, // 浅蓝色
-                            { offset: 1, color: '#5fa4ee' }  // 稍深一点的蓝色
+                            { offset: 0, color: '#86a0f1' },
+                            { offset: 1, color: '#5470c6' }
                         ]
                     }
                 },
                 label: {
                     show: true,
                     position: 'top',
-                    color: '#88c3ff',
+                    color: '#86a0f1',
                     fontSize: 10,
                     fontWeight: 'bold',
                     formatter: '{c}%'
@@ -174,7 +190,13 @@ const initChart = () => {
         ]
     }
 
-    chartInstance.value.setOption(option, true)
+    chartInstance.value.setOption({
+        ...option,
+        series: [{
+            ...option.series[0],
+            data: chartData.value.values // 使用最新数据
+        }]
+    }, true)
 }
 
 // 处理窗口大小变化
@@ -192,13 +214,18 @@ const disposeChart = () => {
 }
 
 // 更新图表数据
-const updateChartData = (data) => {
+const updateChartData = () => {
     if (!chartInstance.value) return
-    chartInstance.value.setOption({
-        series: [{
-            data: data.values
-        }]
-    })
+    chartInstance.value.setOption(
+        {
+            series: [{
+                data: chartData.value.values
+            }]
+        },
+        {
+            notMerge: false // 不合并，保留其他配置
+        }
+    )
 }
 
 const fetchData = async () => {
@@ -207,25 +234,51 @@ const fetchData = async () => {
     loading.value = true;
     isRequesting.value = true;
 
-    const { dateTime, projectIds } = props;
+    const { dateTime, projectIds, reportType, caliberType } = props;
     const params = {
         projIds: projectIds,
-        type: 1, // 0:年  1:月  2:周  3:日
+        type: reportType, // 0:年  1:月  2:周  3:日
         day: `${dateTime} 00:00:00`,
-        beginDate: dayjs(dateTime).startOf("month").format("YYYY-MM-DD") + " 00:00:00",
-        endDate: dayjs(dateTime).endOf("month").format("YYYY-MM-DD") + " 23:59:59",
+        assessCaliber: caliberType
     };
     try {
-        // const res = await largeScreenApi.getCustomerComeInfo(params);
-        await nextTick()
-        initChart()
+        const res = await saleReportApi.getAsstTotalForApp(params);
+        if (res.code === 200) {
+            await nextTick()
+            // 如果图表还没初始化，重新初始化
+            if (!chartInstance.value) {
+                initChart();
+            } else {
+                updateChartData();
+            }
+            setTimeout(() => {
+                handleResize()
+            }, 100)
+        }
     } finally {
         loading.value = false;
         isRequesting.value = false;
     }
 };
 
-// 监听页面显示/隐藏
+watch(
+    () => props.sumData,
+    (newData) => {
+        console.log('completion-rate', newData)
+        completionRate.value = formatNumber(newData.totalRate)
+        const data = [
+            formatNumber(newData.orderRate),
+            formatNumber(newData.signRate),
+            formatNumber(newData.collectRate),
+        ]
+        chartData.value.values = data
+        nextTick(() => {
+            initChart()
+        })
+    },
+    { deep: true, immediate: true }
+)
+
 onMounted(() => {
     window.addEventListener('resize', handleResize)
     nextTick(() => {
@@ -244,9 +297,8 @@ onUnmounted(() => {
 })
 
 // 暴露方法给父组件
-defineExpose({
-    refreshData: fetchData
-})
+defineExpose({ refreshData: fetchData })
+
 </script>
 
 <style lang="scss" scoped>
@@ -309,8 +361,6 @@ defineExpose({
         .info-right {
             width: 60%;
             height: 400rpx;
-            display: flex;
-            flex: 1;
         }
     }
 }

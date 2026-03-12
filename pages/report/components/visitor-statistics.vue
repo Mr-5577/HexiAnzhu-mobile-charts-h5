@@ -6,13 +6,8 @@
         </view>
         <view class="echarts-info">
             <view class="info-left">
-                <text class="name">市场订单</text>
-                <text class="num">9999</text>
-                <view class="percentage">
-                    <uni-icons :type="'arrow-up'" :size="12" :color="'#f56c6c'" />
-                    <uni-icons :type="'arrow-down'" :size="12" :color="'#67c23a'" />
-                    <text class="rate">19.9%</text>
-                </view>
+                <text class="name">来访人数</text>
+                <text class="num">{{ visitNum }}</text>
             </view>
             <div class="info-right" ref="lineChartRef"></div>
         </view>
@@ -22,7 +17,7 @@
 </template>
 
 <script setup>
-import { ref, shallowRef, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, shallowRef, onMounted, onUnmounted, nextTick, computed } from 'vue'
 import LoadingMask from '@/components/loading-mask/index.vue'
 import dayjs from 'dayjs'
 import * as echarts from 'echarts'
@@ -38,6 +33,21 @@ const props = defineProps({
     dateTime: {
         type: String,
         default: ''
+    },
+    // 考核口径，默认全口径，0-全部; 1-业绩
+    caliberType: {
+        type: Number,
+        default: 0
+    },
+    // 报表类型，默认日报，0-年；1-月；2-周；3-日
+    reportType: {
+        type: Number,
+        default: 3
+    },
+    // 统计数据
+    sumData: {
+        type: Object,
+        default: () => null
     }
 })
 
@@ -49,10 +59,34 @@ const isRequesting = ref(false)
 const chartInstance = shallowRef(null)
 const lineChartRef = ref(null)
 
+const chartDayData = ref({
+    xData: [],
+    yData: []
+})
+
+const visitNum = computed(() => {
+    if (props.sumData) {
+        switch (props.reportType) {
+            // 日报
+            case 3:
+                return props.sumData.dayComeNum || 0
+            // 月报
+            case 1:
+                return props.sumData.totalComeNum || 0
+            // 年报
+            case 0:
+                return props.sumData.totalComeNum || 0
+            default:
+                break;
+        }
+    } else {
+        return 0
+    }
+})
 // 横坐标标签间隔计算（适配H5移动端）
 function getLabelInterval(dataLength) {
+    if (!dataLength) return 0;
     const screenWidth = window.innerWidth
-
     if (screenWidth < 375) {
         // 小屏手机，只显示约 8 个标签
         return Math.ceil(dataLength / 8)
@@ -99,7 +133,7 @@ const initChart = () => {
         xAxis: {
             type: 'category',
             boundaryGap: false,
-            data: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31],
+            data: chartDayData.value.xData,
             // 轴线样式
             axisLine: {
                 show: true, // 是否显示轴线
@@ -132,13 +166,14 @@ const initChart = () => {
                 color: '#666',
                 fontSize: 11,
                 margin: 10,
+                rotate: 30, // 旋转30度，避免重叠
+                margin: 12, // 增加边距
                 // 横坐标标签显示优化 - 30个点自动间隔
                 interval: getLabelInterval(30),
                 formatter: function (value) {
                     // 显示日期（去掉年份）
-                    // const date = new Date(value)
-                    // return (date.getMonth() + 1) + '-' + date.getDate()
-                    return value
+                    const date = new Date(value)
+                    return (date.getMonth() + 1) + '-' + date.getDate()
                 }
             }
         },
@@ -147,7 +182,6 @@ const initChart = () => {
                 type: 'value',
                 name: '人',
                 min: 0,
-                max: 100,
                 axisLabel: { color: '#666', fontSize: 12 },
                 nameTextStyle: {
                     color: '#666',
@@ -166,7 +200,7 @@ const initChart = () => {
             {
                 name: '人数',
                 type: 'line',
-                data: [11, 21, 31, 41, 15, 62, 27, 18, 39, 10, 11, 22, 55, 15, 11, 21, 31, 41, 15, 62, 27, 18, 39, 10, 11, 22, 55, 51],
+                data: chartDayData.value.yData,
                 smooth: true,
                 lineStyle: { width: 3 },
                 itemStyle: { color: '#5470c6' }
@@ -190,34 +224,47 @@ const disposeChart = () => {
         chartInstance.value = null
     }
 }
-
-// 更新图表数据
-const updateChartData = (data) => {
-    if (!chartInstance.value) return
-    chartInstance.value.setOption({
-        series: [{
-            data: data.values
-        }]
-    })
+// 重置
+const resetData = () => {
+    chartDayData.value = { xData: [], yData: [] }
 }
-
 const fetchData = async () => {
     // 检查是否已有请求在进行
     if (isRequesting.value) return;
     loading.value = true;
     isRequesting.value = true;
-
     const { dateTime, projectIds } = props;
+    const endTime = dayjs(dateTime)
+        .subtract(1, "day")
+        .endOf("day")
+        .format("YYYY-MM-DD");
+    const startDate = dayjs(endTime)
+        .subtract(30, "day")
+        .format("YYYY-MM-DD");
+
     const params = {
         projIds: projectIds,
-        type: 1, // 0:年  1:月  2:周  3:日
+        type: 0, // 0:年  1:月  2:周  3:日
         day: `${dateTime} 00:00:00`,
-        beginDate: dayjs(dateTime).startOf("month").format("YYYY-MM-DD") + " 00:00:00",
-        endDate: dayjs(dateTime).endOf("month").format("YYYY-MM-DD") + " 23:59:59",
+        beginDate: `${startDate} 00:00:00`,
+        endDate: `${endTime} 23:59:59`,
     };
     try {
-        // const res = await largeScreenApi.getCustomerComeInfo(params);
+        const res = await largeScreenApi.getCustomerCome30Day(params);
+        if (res.code === 200) {
+            const listData = res.data || []
+            const xData = []
+            const yData = []
+            listData.forEach(item => {
+                xData.push(item.comeDate)
+                yData.push(item.comeNum || 0)
+            })
+            chartDayData.value = { xData, yData }
+        }
         await nextTick()
+        initChart()
+    } catch (err) {
+        resetData()
         initChart()
     } finally {
         loading.value = false;
@@ -225,12 +272,8 @@ const fetchData = async () => {
     }
 };
 
-// 监听页面显示/隐藏
 onMounted(() => {
     window.addEventListener('resize', handleResize)
-    nextTick(() => {
-        initChart()
-    })
 })
 
 onUnmounted(() => {
@@ -244,9 +287,7 @@ onUnmounted(() => {
 })
 
 // 暴露方法给父组件
-defineExpose({
-    refreshData: fetchData
-})
+defineExpose({ refreshData: fetchData })
 </script>
 
 <style lang="scss" scoped>
@@ -315,20 +356,9 @@ defineExpose({
 
             .num {
                 font-size: 36rpx;
-                color: #333;
+                color: #5470c6;
                 font-weight: bold;
                 line-height: 2;
-            }
-
-            .percentage {
-                display: flex;
-                align-items: center;
-
-                .rate {
-                    font-size: 24rpx;
-                    color: #67c23a;
-                    color: #f56c6c;
-                }
             }
         }
 
