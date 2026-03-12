@@ -3,11 +3,9 @@
     <view class="premium">
         <view class="premium-header">
             <text class="premium-title">项目统计</text>
-            <text v-if="scaleFactor !== 1" class="scale-tip">溢价已缩放 {{ scaleText }}</text>
+            <!-- <text v-if="scaleFactor !== 1" class="scale-tip">溢价已缩放 {{ scaleText }}</text> -->
         </view>
-        <view style="width: 100%;;height: 500rpx;overflow-y: auto;">
-            <div ref="chartDom" class="chart-area"></div>
-        </view>
+        <div ref="chartDom" class="chart-area"></div>
         <!-- 遮罩层组件 -->
         <loading-mask :visible="loading" text="加载中..." />
     </view>
@@ -69,8 +67,8 @@ const normalizeData = (data) => {
     // 获取除溢价外的最大值（套数指标）
     const maxOther = Math.max(maxAbs1, maxAbs2)
 
-    // 判断是否需要缩放：溢价超过套数指标的5倍时进行缩放
-    const needScale = maxAbs3 > maxOther * 5
+    // 判断是否需要缩放：溢价超过套数指标的30倍时进行缩放
+    const needScale = maxAbs3 > maxOther * 30
 
     if (needScale) {
         // 计算缩放因子：让溢价最大值略高于套数最大值（1.2倍），便于观察
@@ -84,7 +82,7 @@ const normalizeData = (data) => {
         // 返回处理后的数据：values3缩放显示，rawValues3保存原始值用于tooltip
         return {
             ...data,                                      // 保留原始categories、values、values2
-            values3: data.values3.map(v => v * factor),  // 缩放后的显示值
+            values3: data.values3.map(v => formatNumber(v * factor)),  // 缩放后的显示值
             rawValues3: [...data.values3]                 // 原始值备份（用于提示框）
         }
     }
@@ -121,7 +119,7 @@ const chartOption = computed(() => {
             trigger: 'axis',
             axisPointer: { type: 'shadow' },
             formatter: function (params) {
-                let res = params[0].name + '<br/>'
+                let res = params[0].name + '\n'
                 params.forEach(param => {
                     const seriesName = param.seriesName
                     const dataIndex = param.dataIndex
@@ -130,9 +128,9 @@ const chartOption = computed(() => {
                     if (seriesName === '溢价') {
                         // 显示原始值
                         value = chartData.value.rawValues3[dataIndex]
-                        res += `${param.marker} ${seriesName}: ${value} 万元<br/>`
+                        res += `${param.marker} ${seriesName}: ${value} 万元\n`
                     } else {
-                        res += `${param.marker} ${seriesName}: ${value} 套<br/>`
+                        res += `${param.marker} ${seriesName}: ${value} 套\n`
                     }
                 })
                 return res
@@ -254,7 +252,10 @@ const chartOption = computed(() => {
                     distance: 5,
                     fontSize: 6,
                     formatter: function (params) {
-                        return params.value + '万'
+                        // return params.value + '万'
+                        // 从rawValues3中获取真实值
+                        const actualValue = chartData.value.rawValues3[params.dataIndex]
+                        return actualValue + '万'
                     }
                 },
                 // 确保标签显示完整
