@@ -39,3 +39,36 @@ export const formatNumber = (value, decimals = 2, rounding = "round") => {
       return Math.round(num * factor) / factor;
   }
 };
+/**
+ * @name 百分比格式化方法
+ * @description 将小数比例值转换为百分比数值（如：0.8534 → 85.34）
+ * @param {number|string} value - 需要格式化的小数比例值（0-1之间的小数，如：0.8534）
+ * @param {number} [decimals=2] - 保留的小数位数，默认为2位
+ * @returns {number} 返回格式化后的百分比数值（已乘以100）
+ * 
+ * @example
+ * formatPercentage(0.8534)        // 85.34
+ * formatPercentage(0.6234, 1)      // 62.3
+ * formatPercentage(0.3845, 0)      // 38
+ * formatPercentage(null)           // 0
+ * formatPercentage(undefined)      // 0
+ * formatPercentage('')             // 0
+ * formatPercentage('abc')          // 0
+ * formatPercentage(Infinity)       // 0
+ * formatPercentage(1)              // 100
+ * formatPercentage(0)              // 0
+ * formatPercentage(1.5)            // 150
+ */
+export const formatPercentage = (value, decimals = 2) => {
+  if (value === null || value === undefined || value === "") {
+    return 0;
+  }
+  
+  const num = Number(value);
+  if (isNaN(num) || !isFinite(num)) {
+    return 0;
+  }
+  
+  // 乘以100转换为百分比
+  return formatNumber(num * 100, decimals);
+}

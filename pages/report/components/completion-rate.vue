@@ -22,7 +22,7 @@ import SvgRing from '@/components/svg-ring/index.vue'
 import LoadingMask from '@/components/loading-mask/index.vue'
 import * as echarts from 'echarts'
 import { saleReportApi } from '@/common/api.js'
-import { formatNumber } from '@/utils/common.js'
+import { formatPercentage } from '@/utils/common.js'
 
 const props = defineProps({
     // 选择的项目ID
@@ -264,12 +264,11 @@ const fetchData = async () => {
 watch(
     () => props.sumData,
     (newData) => {
-        console.log('completion-rate', newData)
-        completionRate.value = formatNumber(newData.totalRate)
+        completionRate.value = formatPercentage(newData.totalRate)
         const data = [
-            formatNumber(newData.orderRate),
-            formatNumber(newData.signRate),
-            formatNumber(newData.collectRate),
+            formatPercentage(newData.orderRate),
+            formatPercentage(newData.signRate),
+            formatPercentage(newData.collectRate),
         ]
         chartData.value.values = data
         nextTick(() => {

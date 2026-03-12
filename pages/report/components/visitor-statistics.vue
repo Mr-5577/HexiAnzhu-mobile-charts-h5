@@ -105,6 +105,14 @@ const initChart = () => {
     disposeChart()
     // 创建新实例
     chartInstance.value = echarts.init(lineChartRef.value)
+    // 计算 yAxis 最大值
+    const hasData = chartDayData.value.yData && chartDayData.value.yData.length > 0
+    let yAxisMax = 100 // 默认值
+    if (hasData) {
+        const maxValue = Math.max(...chartDayData.value.yData)
+        yAxisMax = Math.ceil(maxValue * 1.2 / 10) * 10 // 向上取整并留20%余量
+    }
+
     // 图表配置
     const option = {
         tooltip: {
@@ -182,6 +190,7 @@ const initChart = () => {
                 type: 'value',
                 name: '人',
                 min: 0,
+                max: yAxisMax,
                 axisLabel: { color: '#666', fontSize: 12 },
                 nameTextStyle: {
                     color: '#666',

@@ -221,7 +221,6 @@ const fetchData = async () => {
 watch(
     () => props.sumData,
     (newData) => {
-        console.log('unpaid', newData)
         nextTick(() => {
             initChart()
         })

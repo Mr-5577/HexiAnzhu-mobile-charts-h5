@@ -59,14 +59,15 @@
                     <text>—— 已加载全部 ——</text>
                 </view>
             </view>
-            <!-- 遮罩层组件 -->
-            <loading-mask :visible="maskLoading" text="加载中..." />
         </scroll-view>
 
         <!-- 回到顶部按钮 -->
         <view class="scroll-to-top" v-show="showScrollTopBtn" @click="scrollToTop">
             <uni-icons type="arrow-up" size="20" color="#fff" />
         </view>
+
+        <!-- 遮罩层组件 -->
+        <loading-mask :visible="maskLoading" text="加载中..." />
     </view>
 
     <!-- 搜索弹窗组件 -->
@@ -387,10 +388,10 @@ const switchTab = async (type) => {
 }
 // 获取数据
 const getReportData = async () => {
-    // uni.showLoading({
-    //     title: '加载中...'
-    // });
-    maskLoading.value = true
+    uni.showLoading({
+        title: '加载中...'
+    });
+    // maskLoading.value = true
     const params = {
         projIds: projectIds.value,
         type: reportType.value, // 0:年  1:月  2:周  3:日

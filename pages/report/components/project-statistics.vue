@@ -17,7 +17,7 @@ import { ref, shallowRef, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import LoadingMask from '@/components/loading-mask/index.vue'
 import dayjs from 'dayjs'
 import * as echarts from 'echarts'
-import { formatNumber } from '@/utils/common.js'
+import { formatPercentage } from '@/utils/common.js'
 
 const props = defineProps({
     // 选择的项目ID
@@ -262,7 +262,7 @@ const processData = (data) => {
         // 处理数据
         const rawData = data.reduce((acc, item) => {
             acc.categories.push(item?.projName || '未知城市')
-            acc.values.push(formatNumber(item?.totalRate) || 0)
+            acc.values.push(formatPercentage(item?.totalRate) || 0)
             return acc
         }, { categories: [], values: [], })
 
