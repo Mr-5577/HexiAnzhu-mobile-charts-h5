@@ -1,4 +1,4 @@
-import { get, post } from "@/utils/request";
+import { post } from "@/utils/request";
 
 // 用户相关接口
 export const userApi = {
@@ -67,5 +67,12 @@ export const largeScreenApi = {
   // 获取来访数据
   getCustomerComeInfo: (data) => {
     return post("/sale/getCustomerComeInfo", data);
+  },
+};
+// 销售报表
+export const saleReportApi = {
+  // 获取销售业绩日、月、年报总体数据
+  getAsstTotalForApp: (data) => {
+    return post("/sale/getAsstTotalForApp", data);
   },
 };
