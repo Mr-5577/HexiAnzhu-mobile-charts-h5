@@ -90,7 +90,7 @@ const systemInfo = ref({})
 const menuVisible = ref(false)
 const menuItems = ref([
     { name: '销售驾驶舱', url: '/pages/index/index' },
-    { name: '报表', url: '/pages/report/index' },
+    { name: '销售报表', url: '/pages/report/index' },
 ])
 
 // 检查是否有右侧内容（包括默认的home按钮和slot内容）
@@ -293,7 +293,7 @@ onUnmounted(() => {
             }
 
             .nav-sub-title {
-                font-size: 20rpx;
+                font-size: 22rpx;
                 color: #333;
                 line-height: 1.2;
                 max-width: 100%;
