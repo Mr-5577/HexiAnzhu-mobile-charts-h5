@@ -1,7 +1,7 @@
 const config = {
   development: {
     baseUrl: '/api',
-    baseUrlActual: 'http://192.168.1.24:8080',
+    baseUrlActual: 'http://192.168.20.200:8091',
     env: 'development'
   },
   production: {

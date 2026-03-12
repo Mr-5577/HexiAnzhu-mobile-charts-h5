@@ -17,14 +17,14 @@
     "template": "index.html",
     "domain": "",
     "devServer": {
-      "port": 8080,
+      "port": 8099,
       "disableHostCheck": true,
       "proxy": {
         "/api": {
-          "target": "http://sys.hexianzhu.com",
+          "target": "http://192.168.20.200:8091",
           "changeOrigin": true,
           "pathRewrite": {
-            "^/api": "/api"
+            "^/api": ""
           }
         }
       }
