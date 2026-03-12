@@ -56,7 +56,7 @@ const handleTokenExpired = () => {
   // 跳转到自动登录页
   setTimeout(() => {
     uni.reLaunch({
-      url: "/pages/login/auto-login",
+      url: "/pages/login/autoLogin",
     });
   }, 1500);
   return Promise.reject(new Error("token过期"));
@@ -134,7 +134,7 @@ const request = (options = {}) => {
     };
     // 添加token
     const token = uni.getStorageSync("token") || "";
-    // const token = 'eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOjE1LCJ1c2VybmFtZSI6IjAwMDAxNSIsImlhdCI6MTc3MjE4MTMwOSwiZXhwIjoxNzcyMjY3NzA5fQ.rgEM3nUHKkCO4XSDSsuYWCUCQlrbCih5aRdevSekuB8'
+    // const token = "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOjE1LCJ1c2VybmFtZSI6IjAwMDAxNSIsImlhdCI6MTc3MzI3ODY5OSwiZXhwIjoxNzczMzY1MDk5fQ.s-UuajBtoz5gtsNraKRgfDHO2lHhSDvyb66OhWjws2k";
     if (token) {
       requestConfig.header.Authorization = `Bearer ${token}`;
     }

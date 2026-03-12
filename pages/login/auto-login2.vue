@@ -1,6 +1,6 @@
 <!-- 这个自动登录版本是通过本地缓存stateTag值，来比较回调值 -->
 <template>
-    <view class="auto-login-page">
+    <view class="autoLogin-page">
         <!-- 加载状态 -->
         <view v-if="loading" class="loading-container">
             <text class="loading-text">正在验证身份...</text>
@@ -96,8 +96,8 @@ const redirectToAuth = async () => {
         // 生成 state 并存储
         // const validState = uuidv4()
 
-        // 把地址编码后作为state参数进行传递   http://sysa.hexianzhu.com/pages/login/auto-login
-        const currentUrl = `${config.baseUrlActual}/pages/login/auto-login`
+        // 把地址编码后作为state参数进行传递   http://sysa.hexianzhu.com/pages/login/autoLogin
+        const currentUrl = `${config.baseUrlActual}/pages/login/autoLogin`
         console.log('currentUrl', currentUrl)
         const validState = encodeURIComponent(currentUrl); // encodeURIComponent 编码    decodeURIComponent 解码
 
@@ -265,7 +265,7 @@ onUnmounted(() => {
 </script>
 
 <style lang="scss" scoped>
-.auto-login-page {
+.autoLogin-page {
     width: 100%;
     height: 100vh;
     display: flex;

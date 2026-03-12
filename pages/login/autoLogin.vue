@@ -16,9 +16,9 @@
             <view class="error-info" v-show="isShowError">
                 <text>urlInfo信息：{{ urlInfo }}</text>
                 <text>token信息：{{ tokenInfo }}</text>
-                <text>state信息：{{ stateInfo }}</text>
+                <text>data信息：{{ dataInfo }}</text>
                 <text>error信息：{{ errorInfo }}</text>
-                <text>locationState信息：{{ locationState }}</text>
+                <text>callbackUrl信息：{{ callbackUrl }}</text>
             </view>
         </view>
     </view>
@@ -27,7 +27,6 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import { userApi } from '@/common/api.js'
-import { v4 as uuidv4 } from 'uuid'
 import config from '@/utils/config.js'
 
 // 本地存储键名常量
@@ -40,6 +39,7 @@ const STORAGE_KEYS = {
 const CALLBACK_URL = `${config.baseUrlActual}/pages/login/autoLogin`
 // 编码后的state（用于传递给后端）
 const ENCODED_STATE = encodeURIComponent(CALLBACK_URL)
+const DATA_VAL = 'app_auto_login'
 
 // 工具函数：显示消息提示
 const showMessage = (message) => {
@@ -80,9 +80,9 @@ const loadingMessage = ref('')
 // 调试信息
 const urlInfo = ref('')
 const tokenInfo = ref('')
-const stateInfo = ref('')
+const dataInfo = ref('')
 const errorInfo = ref('')
-const locationState = ref('')
+const callbackUrl = ref('')
 
 // 防止重复处理
 let isProcessing = false
@@ -90,21 +90,32 @@ let isProcessing = false
 // H5 获取 URL 参数
 const getQueryParams = () => {
     const urlParams = new URLSearchParams(window.location.search)
+    const atobJson = atob(urlParams.get('state') || '')
+    const atobObj = atobJson ? JSON.parse(atobJson) : null
     return {
         token: urlParams.get('token') || '',
-        state: urlParams.get('state') || '',
-        error: urlParams.get('error') || ''
+        error: urlParams.get('error') || '',
+        data: atobObj && atobObj.data ? atobObj.data : '',
+        home: atobObj && atobObj.home ? atobObj.home : '',
     }
 }
 
-// 重定向到认证页面
+// 首次访问，重定向到认证页面，参数url路径的home，作为认证成功后跳转去的页面路径
 const redirectToAuth = async () => {
 
     showMessage('正在获取认证信息...')
-
     try {
+        const urlParams = new URLSearchParams(window.location.search)
+        const homeUrl = urlParams.get('home') ? urlParams.get('home') : '/pages/index/index' // 默认跳转到驾驶舱页面
         // 获取认证地址
-        const res = await userApi.getAuthRedirectUrl({ state: ENCODED_STATE })
+        const params = {
+            data: DATA_VAL,
+            home: homeUrl,
+            autoLoginPage: CALLBACK_URL,
+            isQrCode: false, // 是否扫码
+        }
+        const res = await userApi.getAuthRedirectUrl(params) // 正式接口
+        // const res = await userApi.getAuthRedirectUrlTest(params) // 测试接口
         if (res.code === 200 && res.data) {
             console.log('获取到认证地址，开始重定向:', res.data)
             showMessage('正在跳转到认证页面...')
@@ -112,6 +123,7 @@ const redirectToAuth = async () => {
             await new Promise(resolve => setTimeout(resolve, 800))
             // H5 跳转
             window.location.href = res.data
+            // window.location.href = `http://192.168.1.24:8099/pages/login/autoLogin?token=123&state=eyJhdXRvTG9naW5QYWdlIjoiaHR0cDovLzE5Mi4xNjguMS4yNDo4MDk5L3BhZ2VzL2xvZ2luL2F1dG9Mb2dpbiIsImRhdGEiOiJoeGF6IiwiaG9tZSI6Ii9wYWdlcy9yZXBvcnQvaW5kZXgiLCJpc1FyQ29kZSI6ZmFsc2V9`
         } else {
             throw new Error(res.message || '获取认证地址失败')
         }
@@ -121,9 +133,8 @@ const redirectToAuth = async () => {
     }
 }
 
-// 处理 token 登录
-const handleTokenLogin = async (token, stateParam) => {
-
+// 处理 data 登录
+const handleTokenLogin = async (token, dataParam) => {
     // 特殊情况：hxaz 直接登录
     if (stateParam === 'hxaz') {
         // 保存token
@@ -136,20 +147,18 @@ const handleTokenLogin = async (token, stateParam) => {
         })
         return
     }
-
-    // 验证 state
-    const decodeState = decodeURIComponent(stateParam)
-    if (stateParam === CALLBACK_URL || decodeState === CALLBACK_URL) {
-        // 存储 token
+    // 验证 data 值
+    if (dataParam === DATA_VAL) {
+        // 保存token
         storage.setToken(token)
         showMessage('登录成功，正在跳转...')
+        const { home } = getQueryParams()
         await new Promise(resolve => setTimeout(resolve, 800))
         // H5 跳转到首页
         uni.redirectTo({
-            url: '/pages/index/index'
+            url: home || '/pages/index/index'
         })
     } else {
-        console.error('state验证失败:', { received: stateParam, expected: CALLBACK_URL })
         showMessage('登录验证失败，请重新登录')
         storage.removeToken()
         throw new Error('state验证失败')
@@ -161,17 +170,16 @@ const handleRouteParams = async () => {
     // 防止重复处理
     if (isProcessing) return
     isProcessing = true
-
     try {
         loading.value = true
         errorMessage.value = ''
 
         // 获取 URL 参数
-        const { token, state, error } = getQueryParams()
+        const { token, error, data } = getQueryParams()
 
         // 保存调试信息
         tokenInfo.value = token
-        stateInfo.value = state
+        dataInfo.value = data
         errorInfo.value = error
 
         // 情况1：有错误参数
@@ -181,9 +189,9 @@ const handleRouteParams = async () => {
             return
         }
 
-        // 情况2：有 token 和 state，开始验证登录
-        if (token && state) {
-            await handleTokenLogin(token, state)
+        // 情况2：有 token 和 data，开始验证登录
+        if (token && data) {
+            await handleTokenLogin(token, data)
             return
         }
         // 情况3：首次访问，没有token也没有state
@@ -313,7 +321,7 @@ const showDeviceChoiceDialog = () => {
 onMounted(() => {
     console.log('H5自动登录页面挂载')
     urlInfo.value = window.location.href
-    locationState.value = CALLBACK_URL
+    callbackUrl.value = CALLBACK_URL
     const deviceType = detectDeviceType();
     console.log('设备类型:', deviceType)
     if (deviceType === 'mobile') {

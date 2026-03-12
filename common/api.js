@@ -13,6 +13,10 @@ export const userApi = {
   getAuthRedirectUrl: (data) => {
     return post(`/callback/getAuthRedirectUrl`, data);
   },
+  // 获取认证地址回调（测试）
+  getAuthRedirectUrlTest: (data) => {
+    return post(`/callback/getAuthRedirectUrlTest`, data);
+  },
   // 退出登录
   logout() {
     return post("/auth/logout");

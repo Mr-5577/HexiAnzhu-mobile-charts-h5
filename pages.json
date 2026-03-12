@@ -8,7 +8,7 @@
 			}
 		}, 
 		{
-			"path": "pages/login/auto-login",
+			"path": "pages/login/autoLogin",
 			"style": {
 				"navigationBarTitleText": "自动登录",
 				"navigationStyle": "custom"

@@ -1,12 +1,12 @@
 <script>
 import config from '@/utils/config.js'
 // 白名单：不需要登录token就能访问的页面
-const WHITE_LIST = ['pages/login/auto-login']
+const WHITE_LIST = ['pages/login/autoLogin']
 export default {
 	onLaunch: function () {
 		// console.log('App Launch')
 		console.log('process.env.NODE_ENV:', process.env.NODE_ENV)
-		console.log('当前配置:', config)
+		console.log('config:', config)
 	},
 	onShow: function () {
 		// console.log('App Show')
@@ -33,13 +33,12 @@ export default {
 				const token = uni.getStorageSync('token')
 				if (!token) {
 					// 如果当前已经是登录页，不重复跳转
-					if (route === 'pages/login/auto-login') return
-					// 清除 token stateTag 相关缓存
+					if (route === 'pages/login/autoLogin') return
+					// 清除 token 缓存
 					uni.removeStorageSync("token")
-					uni.removeStorageSync("stateTag")
 					// 跳转到自动登录页
 					uni.reLaunch({
-						url: "/pages/login/auto-login"
+						url: "/pages/login/autoLogin"
 					})
 				}
 			} catch (error) {
