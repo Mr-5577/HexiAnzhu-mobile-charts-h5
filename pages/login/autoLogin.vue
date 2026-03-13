@@ -37,8 +37,7 @@ const STORAGE_KEYS = {
 
 // 固定的回调地址，http://sysa.hexianzhu.com/pages/login/autoLogin
 const CALLBACK_URL = `${config.baseUrlActual}/pages/login/autoLogin`
-// 编码后的state（用于传递给后端）
-const ENCODED_STATE = encodeURIComponent(CALLBACK_URL)
+
 const DATA_VAL = 'app_auto_login'
 
 // 工具函数：显示消息提示
@@ -136,7 +135,7 @@ const redirectToAuth = async () => {
 // 处理 data 登录
 const handleTokenLogin = async (token, dataParam) => {
     // 特殊情况：hxaz 直接登录
-    if (stateParam === 'hxaz') {
+    if (dataParam === 'hxaz') {
         // 保存token
         storage.setToken(token)
         showMessage('登录成功，正在跳转...')
