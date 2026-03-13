@@ -34,7 +34,11 @@ const STORAGE_KEYS = {
     TOKEN: 'token',
     STATE_TAG: 'stateTag'
 }
-
+// 页面白名单
+const VALID_PAGES = new Set([
+    '/pages/index/index',
+    '/pages/report/index',
+])
 // 固定的回调地址，http://sysa.hexianzhu.com/pages/login/autoLogin
 const CALLBACK_URL = `${config.baseUrlActual}/pages/login/autoLogin`
 
@@ -151,11 +155,13 @@ const handleTokenLogin = async (token, dataParam) => {
         // 保存token
         storage.setToken(token)
         showMessage('登录成功，正在跳转...')
-        const { home } = getQueryParams()
         await new Promise(resolve => setTimeout(resolve, 800))
+        const { home } = getQueryParams()
+        // 判断是否在白名单中，不在就跳首页
+        const targetPath = home && VALID_PAGES.has(home) ? home : '/pages/index/index'
         // H5 跳转到首页
         uni.redirectTo({
-            url: home || '/pages/index/index'
+            url: targetPath
         })
     } else {
         showMessage('登录验证失败，请重新登录')

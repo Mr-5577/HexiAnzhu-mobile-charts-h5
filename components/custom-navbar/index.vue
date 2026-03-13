@@ -281,7 +281,7 @@ onUnmounted(() => {
             }
 
             .nav-title {
-                font-size: 32rpx;
+                font-size: 34rpx;
                 font-weight: 600;
                 color: #333333;
                 line-height: 1.2;
@@ -396,41 +396,6 @@ onUnmounted(() => {
 
         &:active {
             background-color: #f7f7f7;
-        }
-    }
-}
-
-/* 深色主题适配 */
-@media (prefers-color-scheme: dark) {
-    .custom-navbar {
-        background-color: #1a1a1a;
-        border-bottom-color: #333333;
-
-        .navbar-content {
-            .nav-left {
-                .back-container {
-
-                    .back-text {
-                        color: #ffffff;
-                    }
-                }
-            }
-
-            .nav-center {
-                .nav-title {
-                    color: #ffffff;
-                }
-            }
-
-            .nav-right {
-                .home-btn {
-                    background-color: rgba(255, 255, 255, 0.1);
-
-                    .icon-home {
-                        color: #ffffff;
-                    }
-                }
-            }
         }
     }
 }

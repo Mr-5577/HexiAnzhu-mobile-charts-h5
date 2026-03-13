@@ -15,7 +15,7 @@
             :refresher-triggered="refresherTriggered" refresher-default-style="none" refresher-background="#fff"
             @refresherrefresh="onRefresh" @refresherpulling="onPulling" @refresherrestore="onRestore" @scroll="onScroll"
             :show-scrollbar="false" :scroll-top="scrollTopVal" :scroll-with-animation="true" :lower-threshold="30"
-            @scrolltolower="onScrollToLower">
+            @scrolltolower="onScrollToLower" :refresher-threshold="100" @touchend="onTouchEnd">
             <!-- 下拉刷新状态 -->
             <pull-down-refresh :pull-height="pullHeight" :refresher-triggered="refresherTriggered"
                 :refresh-text="refreshText" />
@@ -42,7 +42,7 @@
                 <!-- 来访统计 -->
                 <visitor-statistics ref="visitorStatisticsRef" :projectIds="projectIds" :dateTime="dateTime"
                     :reportType="reportType" :caliberType="caliberType" :sumData="sumData"></visitor-statistics>
-                <!-- 溢价、退房、挞定 -->
+                <!-- 退房、挞定、溢价 -->
                 <cumulative-statistics ref="cumulativeStatisticsRef" :projectIds="projectIds" :dateTime="dateTime"
                     :reportType="reportType" :caliberType="caliberType" :sumData="sumData"></cumulative-statistics>
                 <!-- 项目统计 -->
@@ -132,7 +132,6 @@ import { largeScreenApi, saleReportApi } from '@/common/api.js'
 
 // 响应式数据
 const maskLoading = ref(false)
-const isReadyToRefresh = ref(false)
 const pullHeight = ref(0)
 const isPulling = ref(false)
 const refresherTriggered = ref(false)
@@ -213,20 +212,23 @@ const onRefresh = async () => {
     refresherTriggered.value = true
     refreshText.value = '正在刷新...'
     try {
-        // 刷新重置查询条件为初始值
-        dateTime.value = dayjs().format('YYYY-MM-DD')
-        // 重置考核口径为全口径
-        caliberIndex.value = 0
-        caliberType.value = 0
-        // 重置报表类型为日报
-        reportType.value = 3
-        // 更新缓存参数
-        cacheParams.value.dateTime = dayjs().format('YYYY-MM-DD')
-        cacheParams.value.caliberIndex = 0
-        cacheParams.value.caliberType = 0
-        cacheParams.value.reportType = 3
         refreshText.value = '刷新成功,正在请求数据...'
-        await getProjectData()
+
+        // 下拉保持当前查询条件
+        // // 刷新重置查询条件为初始值
+        // dateTime.value = dayjs().format('YYYY-MM-DD')
+        // // 重置考核口径为全口径
+        // caliberIndex.value = 0
+        // caliberType.value = 0
+        // // 重置报表类型为日报
+        // reportType.value = 3
+        // // 更新缓存参数
+        // cacheParams.value.dateTime = dayjs().format('YYYY-MM-DD')
+        // cacheParams.value.caliberIndex = 0
+        // cacheParams.value.caliberType = 0
+        // cacheParams.value.reportType = 3
+        // await getProjectData()
+
         await getReportData()
         await refreshAllComponents();
     } catch (error) {
@@ -245,33 +247,34 @@ const onRefresh = async () => {
 const onPulling = (e) => {
     isPulling.value = true
     const height = e.detail.deltaY
-    pullHeight.value = Math.min(height, 120)
-    if (height > 80) {
-        isReadyToRefresh.value = true
-        refreshText.value = '释放刷新'
-    } else {
-        isReadyToRefresh.value = false
-        refreshText.value = '下拉刷新'
-    }
+    pullHeight.value = Math.min(height, 100)
+
+    // 根据下拉距离显示不同文字
+    refreshText.value = height >= 100 ? '释放刷新' : '下拉刷新'
 }
 // 自定义下拉刷新被复位
 const onRestore = () => {
     if (!refresherTriggered.value) {
-        setTimeout(() => {
-            pullHeight.value = 0
-            isPulling.value = false
-            isReadyToRefresh.value = false
-            refreshText.value = '下拉刷新'
-        }, 300)
+        pullHeight.value = 0
+        isPulling.value = false
+        refreshText.value = '下拉刷新'
     }
 }
-
+// 添加触摸结束事件处理
+const onTouchEnd = () => {
+    // 如果正在下拉但未达到刷新阈值，且不是刷新状态，复位高度
+    if (isPulling.value && !refresherTriggered.value && pullHeight.value < 100) {
+        pullHeight.value = 0
+        isPulling.value = false
+        refreshText.value = '下拉刷新'
+    }
+}
 // 滚动事件处理
 const onScroll = (e) => {
     scrollTop.value = e.detail.scrollTop
     // 控制导航栏透明度
-    const alpha = Math.min(scrollTop.value / 100, 1)
-    showNavBorder.value = alpha > 0.8
+    // const alpha = Math.min(scrollTop.value / 100, 1)
+    // showNavBorder.value = alpha > 0.8
 
     // 显示/隐藏返回顶部按钮
     showScrollTopBtn.value = scrollTop.value > 50
@@ -432,10 +435,24 @@ const getReportData = async () => {
         maskLoading.value = false
     }
 }
+// 根据当前时间与21点的比较获取报表日期
+const getReportDate = () => {
+    const now = dayjs()
+    const ninePM = dayjs().hour(21).minute(0).second(0).millisecond(0)
+
+    if (now.valueOf() >= ninePM.valueOf()) {
+        // 当前时间 >= 21:00:00
+        return now.format('YYYY-MM-DD')
+    } else {
+        // 当前时间 < 21:00:00
+        return now.subtract(1, 'day').format('YYYY-MM-DD')
+    }
+}
 // 生命周期
 onMounted(async () => {
-    dateTime.value = dayjs().format('YYYY-MM-DD')
-    cacheParams.value.dateTime = dayjs().format('YYYY-MM-DD')
+    // 根据时间判断获取对应的日期
+    dateTime.value = getReportDate()
+    cacheParams.value.dateTime = dateTime.value
     // 先加载项目数据再请求子组件数据
     await getProjectData()
     await getReportData()

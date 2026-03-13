@@ -199,9 +199,9 @@ const chartOption = computed(() => {
                         type: 'linear',
                         x: 0, y: 0, x2: 0, y2: 1,
                         colorStops: [
-                            { offset: 0, color: '#88c3ff' },
-                            { offset: 0.6, color: '#5fa4ee' },
-                            { offset: 1, color: '#409eff' }
+                            { offset: 0, color: '#88c3ff' },   // 浅蓝色/天蓝
+                            { offset: 0.6, color: '#5fa4ee' }, // 中蓝色
+                            { offset: 1, color: '#409eff' }    // 深蓝色/经典蓝
                         ]
                     }
                 }
@@ -233,9 +233,9 @@ const chartOption = computed(() => {
                         type: 'linear',
                         x: 0, y: 0, x2: 0, y2: 1,
                         colorStops: [
-                            { offset: 0, color: '#ffd166' },
-                            { offset: 0.6, color: '#ffc107' },
-                            { offset: 1, color: '#ff8c00' }
+                            { offset: 0, color: '#ffd166' },   // 浅橙色/杏色
+                            { offset: 0.6, color: '#ffc107' }, // 亮橙色/琥珀色
+                            { offset: 1, color: '#ff8c00' }    // 深橙色
                         ]
                     }
                 }
@@ -249,8 +249,10 @@ const chartOption = computed(() => {
                 label: {
                     show: true,
                     position: 'right',
-                    distance: 5,
+                    distance: 4,
                     fontSize: 6,
+                    color: '#666',
+                    fontWeight: 'normal',
                     formatter: function (params) {
                         // return params.value + '万'
                         // 从rawValues3中获取真实值
@@ -264,6 +266,15 @@ const chartOption = computed(() => {
                 },
                 itemStyle: {
                     borderRadius: [4, 4, 2, 2],
+                    color: {
+                        type: 'linear',
+                        x: 0, y: 0, x2: 0, y2: 1,
+                        colorStops: [
+                            { offset: 0, color: '#8CD47E' },  // 浅薄荷
+                            { offset: 0.6, color: '#5FB85C' }, // 薄荷绿
+                            { offset: 1, color: '#3E9A3E' }    // 深薄荷
+                        ]
+                    }
                 }
             }
         ]

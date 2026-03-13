@@ -1,8 +1,8 @@
-<!-- 溢价、退房、挞定 -->
+<!-- 退房、挞定、溢价 -->
 <template>
     <view class="conversion-metrics">
         <view class="metrics-header">
-            <text class="metrics-title">溢价、退房、挞定</text>
+            <text class="metrics-title">退房、挞定、溢价</text>
         </view>
         <!-- 六宫格数据展示区域 -->
         <view class="data-grid">
@@ -23,6 +23,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import LoadingMask from '@/components/loading-mask/index.vue'
 import { saleReportApi } from '@/common/api.js'
+import { formatPercentage } from '@/utils/common.js'
 
 const props = defineProps({
     // 选择的项目ID
@@ -83,42 +84,63 @@ const displayData = computed(() => {
     if (props.sumData) {
         // 有数据时
         let targetData = {
-            premium: 0, // 溢价
             checkOutNum: 0, // 退房
             taDingNum: 0, // 挞定
+            premium: 0, // 溢价
+            checkOutMoney: 0, // 退房金额
+            taDingMoney: 0, // 挞定金额
+            premiumRate: 0, // 溢价率
         }
         switch (props.reportType) {
             // 日报
             case 3:
-                targetData.premium = props.sumData.dayPemMoney || 0
                 targetData.checkOutNum = props.sumData.dayCheckoutNum || 0
                 targetData.taDingNum = 0
+                targetData.premium = props.sumData.dayPemMoney || 0
+
+                targetData.checkOutMoney = 0
+                targetData.taDingMoney = 0
+                targetData.premiumRate = formatPercentage(props.sumData.dayPemRate || 0)
                 break;
             // 月报
             case 1:
-                targetData.premium = props.sumData.totalPemMoney || 0
                 targetData.checkOutNum = props.sumData.totalCheckoutNum || 0
                 targetData.taDingNum = 0
+                targetData.premium = props.sumData.totalPemMoney || 0
+
+                targetData.checkOutMoney = 0
+                targetData.taDingMoney = 0
+                targetData.premiumRate = formatPercentage(props.sumData.totalPemRate || 0)
                 break;
             // 年报
             case 0:
-                targetData.premium = props.sumData.totalPemMoney || 0
                 targetData.checkOutNum = props.sumData.totalCheckoutNum || 0
                 targetData.taDingNum = 0
+                targetData.premium = props.sumData.totalPemMoney || 0
+
+                targetData.checkOutMoney = 0
+                targetData.taDingMoney = 0
+                targetData.premiumRate = formatPercentage(props.sumData.totalPemRate || 0)
                 break;
             default:
                 break;
         }
         listData = [
-            { label: '溢价', value: targetData.premium, unit: '万' },
             { label: '退房', value: targetData.checkOutNum, unit: '套' },
             { label: '挞定', value: targetData.taDingNum, unit: '套' },
+            { label: '溢价', value: targetData.premium, unit: '万' },
+            { label: '退房金额', value: targetData.checkOutMoney, unit: '万' },
+            { label: '挞定金额', value: targetData.taDingMoney, unit: '万' },
+            { label: '溢价率', value: targetData.premiumRate, unit: '%' },
         ]
     } else {
         listData = [
-            { label: '溢价', value: 0, unit: '万' },
             { label: '退房', value: 0, unit: '套' },
             { label: '挞定', value: 0, unit: '套' },
+            { label: '溢价', value: 0, unit: '万' },
+            { label: '退房金额', value: 0, unit: '万' },
+            { label: '挞定金额', value: 0, unit: '万' },
+            { label: '溢价率', value: 0, unit: '%' },
         ]
     }
     return listData
