@@ -66,8 +66,6 @@
             <uni-icons type="arrow-up" size="20" color="#fff" />
         </view>
 
-        <!-- 遮罩层组件 -->
-        <loading-mask :visible="maskLoading" text="加载中..." />
     </view>
 
     <!-- 搜索弹窗组件 -->
@@ -125,13 +123,11 @@ import Premium from '@/pages/report/components/premium.vue'
 import Unpaid from '@/pages/report/components/unpaid.vue'
 import ProjectStatistics from '@/pages/report/components/project-statistics.vue'
 import PullDownRefresh from '@/components/pull-down-refresh/index.vue'
-import LoadingMask from '@/components/loading-mask/index.vue'
 import dayjs from 'dayjs'
 import { ref, computed, onMounted, nextTick } from 'vue'
 import { largeScreenApi, saleReportApi } from '@/common/api.js'
 
 // 响应式数据
-const maskLoading = ref(false)
 const pullHeight = ref(0)
 const isPulling = ref(false)
 const refresherTriggered = ref(false)
@@ -153,8 +149,8 @@ const caliberList = ref([
     { value: 'all', name: '全口径', type: 0 },
     { value: 'performance', name: '业绩口径', type: 1 },
 ])
-const caliberIndex = ref(0) // 选中口径索引，默认全口径
-const caliberType = ref(0) // 选中口径类型，默认全口径
+const caliberIndex = ref(1) // 选中口径索引，默认业绩口径
+const caliberType = ref(1) // 选中口径类型，默认业绩口径
 // 日报、月报、年报
 const reportTypeList = ref([
     { value: 'day', name: '日报', type: 3 },
@@ -173,8 +169,8 @@ const subTitle = computed(() => {
 const cacheParams = ref({
     projectIds: [], // 项目
     dateTime: '', // 日期
-    caliberIndex: 0, // 默认全口径
-    caliberType: 0, // 默认全口径
+    caliberIndex: 1, // 默认业绩口径
+    caliberType: 1, // 默认业绩口径
     reportType: 3 // 默认日报
 })
 const showCompletionRate = computed(() => {
@@ -217,15 +213,15 @@ const onRefresh = async () => {
         // 下拉保持当前查询条件
         // // 刷新重置查询条件为初始值
         // dateTime.value = dayjs().format('YYYY-MM-DD')
-        // // 重置考核口径为全口径
-        // caliberIndex.value = 0
-        // caliberType.value = 0
+        // // 重置考核口径为业绩口径
+        // caliberIndex.value = 1
+        // caliberType.value = 1
         // // 重置报表类型为日报
         // reportType.value = 3
         // // 更新缓存参数
         // cacheParams.value.dateTime = dayjs().format('YYYY-MM-DD')
-        // cacheParams.value.caliberIndex = 0
-        // cacheParams.value.caliberType = 0
+        // cacheParams.value.caliberIndex = 1
+        // cacheParams.value.caliberType = 1
         // cacheParams.value.reportType = 3
         // await getProjectData()
 
@@ -298,6 +294,7 @@ const scrollToTop = () => {
 
 // 搜索相关方法
 const openSearchPopup = () => searchPopupRef.value?.open()
+// 关闭搜索窗口
 const closeSearchPop = () => {
     projectIds.value = cacheParams.value.projectIds
     dateTime.value = cacheParams.value.dateTime
@@ -306,6 +303,7 @@ const closeSearchPop = () => {
     reportType.value = cacheParams.value.reportType
     searchPopupRef.value?.close()
 }
+// 查询
 const handleSearch = async () => {
     searchPopupRef.value?.close()
     cacheParams.value.projectIds = projectIds.value
@@ -394,7 +392,6 @@ const getReportData = async () => {
     uni.showLoading({
         title: '加载中...'
     });
-    // maskLoading.value = true
     const params = {
         projIds: projectIds.value,
         type: reportType.value, // 0:年  1:月  2:周  3:日
@@ -426,13 +423,15 @@ const getReportData = async () => {
                     sumData.value = null
                     break;
             }
+        } else {
+            projectData.value = []
+            sumData.value = null
         }
     } catch (error) {
         projectData.value = []
         sumData.value = null
     } finally {
         uni.hideLoading()
-        maskLoading.value = false
     }
 }
 // 根据当前时间与21点的比较获取报表日期
@@ -441,10 +440,10 @@ const getReportDate = () => {
     const ninePM = dayjs().hour(21).minute(0).second(0).millisecond(0)
 
     if (now.valueOf() >= ninePM.valueOf()) {
-        // 当前时间 >= 21:00:00
+        // 当前时间 >= 21:00:00，返回当天年月日
         return now.format('YYYY-MM-DD')
     } else {
-        // 当前时间 < 21:00:00
+        // 当前时间 < 21:00:00，返回前一天年月日
         return now.subtract(1, 'day').format('YYYY-MM-DD')
     }
 }

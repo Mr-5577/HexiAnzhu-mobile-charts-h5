@@ -19,6 +19,7 @@
 import { ref, shallowRef, onMounted, onUnmounted, computed, nextTick, watch } from 'vue'
 import * as echarts from 'echarts'
 import LoadingMask from '@/components/loading-mask/index.vue'
+import { formatNumber } from '@/utils/common.js'
 
 const props = defineProps({
     // 选择的项目ID
@@ -61,11 +62,13 @@ const proportionData = computed(() => {
         return [
             { name: '已签约', value: props.sumData.signNum || 0 },
             { name: '未签约', value: props.sumData.notSignNum || 0 },
+            { name: '物业借款', value: formatNumber(props.sumData.loanNum) || 0 },
         ]
     } else {
         return [
             { name: '已签约', value: 0 },
             { name: '未签约', value: 0 },
+            { name: '物业借款', value: 0 },
         ]
 
     }
