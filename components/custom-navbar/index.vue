@@ -281,7 +281,7 @@ onUnmounted(() => {
             }
 
             .nav-title {
-                font-size: 34rpx;
+                font-size: 32rpx;
                 font-weight: 600;
                 color: #333333;
                 line-height: 1.2;
