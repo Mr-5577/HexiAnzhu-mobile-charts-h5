@@ -94,32 +94,32 @@ const displayData = computed(() => {
         switch (props.reportType) {
             // 日报
             case 3:
-                targetData.checkOutNum = props.sumData.dayCheckoutNum || 0
-                targetData.taDingNum = 0
+                targetData.checkOutNum = props.sumData.dayCheckoutTfNum || 0
+                targetData.taDingNum = props.sumData.dayCheckoutTdNum || 0
                 targetData.premium = props.sumData.dayPemMoney || 0
 
-                targetData.checkOutMoney = 0
-                targetData.taDingMoney = 0
+                targetData.checkOutMoney = props.sumData.dayCheckoutTfMoney || 0
+                targetData.taDingMoney = props.sumData.dayCheckoutTdMoney || 0
                 targetData.premiumRate = formatPercentage(props.sumData.dayPemRate || 0)
                 break;
             // 月报
             case 1:
-                targetData.checkOutNum = props.sumData.totalCheckoutNum || 0
-                targetData.taDingNum = 0
+                targetData.checkOutNum = props.sumData.totalCheckoutTfNum || 0
+                targetData.taDingNum = props.sumData.totalCheckoutTdNum || 0
                 targetData.premium = props.sumData.totalPemMoney || 0
 
-                targetData.checkOutMoney = 0
-                targetData.taDingMoney = 0
+                targetData.checkOutMoney = props.sumData.totalCheckoutTfMoney || 0
+                targetData.taDingMoney = props.sumData.totalCheckoutTdMoney || 0
                 targetData.premiumRate = formatPercentage(props.sumData.totalPemRate || 0)
                 break;
             // 年报
             case 0:
-                targetData.checkOutNum = props.sumData.totalCheckoutNum || 0
-                targetData.taDingNum = 0
+                targetData.checkOutNum = props.sumData.totalCheckoutTfNum || 0
+                targetData.taDingNum = props.sumData.totalCheckoutTdNum || 0
                 targetData.premium = props.sumData.totalPemMoney || 0
 
-                targetData.checkOutMoney = 0
-                targetData.taDingMoney = 0
+                targetData.checkOutMoney = props.sumData.totalCheckoutTfMoney || 0
+                targetData.taDingMoney = props.sumData.totalCheckoutTdMoney || 0
                 targetData.premiumRate = formatPercentage(props.sumData.totalPemRate || 0)
                 break;
             default:
