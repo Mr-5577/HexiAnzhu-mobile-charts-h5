@@ -1,7 +1,7 @@
 <template>
     <view class="report-page">
         <!-- 固定导航栏 -->
-        <custom-navbar title="销售报表" :sub-title="subTitle" :show-left="true" :show-more-menu="true" :show-right="true"
+        <custom-navbar title="销售报表" :show-left="true" :show-more-menu="true" :show-right="true"
             fixed :translucent="true" :border-bottom="showNavBorder">
             <template #right>
                 <view @click="openSearchPopup">
@@ -9,7 +9,29 @@
                 </view>
             </template>
         </custom-navbar>
-
+        <!-- 查询条件显示 -->
+        <view class="query-info-bar" :style="queryInfoBarStyle">
+            <view class="query-info-content">
+                <view class="info-item">
+                    <view class="info-label">项目</view>
+                    <view class="info-value">{{ subTitle.project }}</view>
+                </view>
+                <!-- 分割线 -->
+                <view class="info-divider"></view>
+                <view class="info-item">
+                    <view class="info-label">日期</view>
+                    <view class="info-value">{{ subTitle.time }}</view>
+                </view>
+                <!-- 分割线 -->
+                <view class="info-divider"></view>
+                <view class="info-item">
+                    <view class="info-label">口径</view>
+                    <view class="info-value">
+                        {{ subTitle.caliberText }}
+                    </view>
+                </view>
+            </view>
+        </view>
         <!-- 滚动内容区域 -->
         <scroll-view class="scroll-container" :style="contentTopStyle" scroll-y :refresher-enabled="true"
             :refresher-triggered="refresherTriggered" refresher-default-style="none" refresher-background="#fff"
@@ -163,7 +185,12 @@ const subTitle = computed(() => {
     const projectIdLength = projectIds.value.length || 0
     const time = dateTime.value
     const caliberText = caliberList.value.find((item) => item.type === caliberType.value).name
-    return `${projectIdLength}个项目、${time}、${caliberText}`
+    // return `${projectIdLength}个项目、${time}、${caliberText}`
+    return {
+        project: `${projectIdLength}个项目`,
+        time: time,
+        caliberText: caliberText,
+    }
 })
 // 缓存真实查询条件
 const cacheParams = ref({
@@ -187,6 +214,11 @@ const showBarChart = computed(() => {
     const idLength = projectIds.value.length
     return (reportType.value === 1 || reportType.value === 0) && idLength > 1
 })
+const queryInfoBarStyle = computed(() => {
+    const info = uni.getSystemInfoSync()
+    const statusBarHeight = info.statusBarHeight || 0
+    return { top: (statusBarHeight + 44) + 'px' }
+})
 // 子组件ref
 const completionRateRef = ref(null);
 const subscriptionRef = ref(null);
@@ -200,7 +232,7 @@ const projectStatisticsRef = ref(null);
 const contentTopStyle = computed(() => {
     const info = uni.getSystemInfoSync()
     const statusBarHeight = info.statusBarHeight || 0
-    return { paddingTop: (statusBarHeight + 44) + 'px' }
+    return { paddingTop: (statusBarHeight + 44 + 44) + 'px' }
 })
 
 // 下拉刷新相关方法
@@ -642,6 +674,82 @@ onMounted(async () => {
                 }
             }
         }
+    }
+}
+
+// 查询信息栏样式
+.query-info-bar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    z-index: 99;
+    padding: 16rpx 30rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(10rpx);
+    // 添加阴影效果
+    box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.02);
+
+    .query-info-content {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: space-around;
+        gap: 20rpx;
+        min-width: 0; // 防止flex溢出
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 8rpx;
+
+            .info-label {
+                font-size: 24rpx;
+                color: #999;
+                white-space: nowrap;
+            }
+
+            .info-value {
+                font-size: 26rpx;
+                font-weight: 500;
+                color: #333;
+                white-space: nowrap;
+                max-width: 150rpx;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+        }
+
+        .info-divider {
+            width: 1rpx;
+            height: 24rpx;
+            background: linear-gradient(180deg, transparent, #ddd, transparent);
+        }
+    }
+}
+
+// 调整原有的scroll-container，增加上边距
+.scroll-container {
+    height: 100vh;
+    width: 100%;
+    box-sizing: border-box;
+    // padding-top由内联样式动态计算
+}
+
+// 原有的main-content可能需要微调padding-top
+.main-content {
+    min-height: 100vh;
+    padding: 0rpx 30rpx 30rpx; // 移除原有的padding-top
+    box-sizing: border-box;
+    gap: 30rpx;
+    display: flex;
+    flex-direction: column;
+
+    // 确保sticky-tab在查询信息栏下方
+    .sticky-tab {
+        top: 0;
+        // 其他样式保持不变
     }
 }
 
