@@ -332,8 +332,11 @@ onMounted(() => {
     if (deviceType === 'mobile') {
         handleRouteParams()
     } else {
-        // 平板和PC端都重定向到PC端地址
-        window.location.href = 'http://sys.hexianzhu.com/autoLogin'
+        // 平板和PC端都重定向到PC端地址,如果有pcHome参数则跳转到对应PC端页面
+        const urlParams = new URLSearchParams(window.location.search)
+        const pcHomeUrl = urlParams.get('pcHome') ? urlParams.get('pcHome') : ''
+        window.location.href = pcHomeUrl ? `http://sys.hexianzhu.com/autoLogin?home=${pcHomeUrl}` : 'http://sys.hexianzhu.com/autoLogin'
+        // window.location.href = pcHomeUrl ? `http://192.168.1.24:3000/autoLogin?home=${pcHomeUrl}` : 'http://192.168.1.24:3000/autoLogin'
     }
 })
 
