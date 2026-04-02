@@ -34,11 +34,6 @@ const STORAGE_KEYS = {
     TOKEN: 'token',
     STATE_TAG: 'stateTag'
 }
-// 页面白名单
-const VALID_PAGES = new Set([
-    '/pages/index/index',
-    '/pages/report/index',
-])
 // 固定的回调地址，http://sysa.hexianzhu.com/pages/login/autoLogin
 const CALLBACK_URL = `${config.baseUrlActual}/pages/login/autoLogin`
 
@@ -109,7 +104,7 @@ const redirectToAuth = async () => {
     showMessage('正在获取认证信息...')
     try {
         const urlParams = new URLSearchParams(window.location.search)
-        const homeUrl = urlParams.get('home') ? urlParams.get('home') : '/pages/index/index' // 默认跳转到驾驶舱页面
+        const homeUrl = urlParams.get('home') || '/pages/index/index' // 默认跳转到驾驶舱页面, URLSearchParams.get() 会自动解码
         // 获取认证地址
         const params = {
             data: DATA_VAL,
@@ -126,7 +121,7 @@ const redirectToAuth = async () => {
             await new Promise(resolve => setTimeout(resolve, 800))
             // H5 跳转
             window.location.href = res.data
-            // window.location.href = `http://192.168.1.24:8099/pages/login/autoLogin?token=123&state=eyJhdXRvTG9naW5QYWdlIjoiaHR0cDovLzE5Mi4xNjguMS4yNDo4MDk5L3BhZ2VzL2xvZ2luL2F1dG9Mb2dpbiIsImRhdGEiOiJoeGF6IiwiaG9tZSI6Ii9wYWdlcy9yZXBvcnQvaW5kZXgiLCJpc1FyQ29kZSI6ZmFsc2V9`
+            // window.location.href = `http://192.168.1.24:8098/pages/login/autoLogin?token=123&state=eyJkYXRhIjoiYXBwX2F1dG9fbG9naW4iLCJob21lIjoiL3BhZ2VzL3JlcG9ydC9pbmRleD9kYXk9MjAyNi0wMy0zMCIsImF1dG9Mb2dpblBhZ2UiOiJodHRwOi8vMTkyLjE2OC4xLjI0OjgwOTgvcGFnZXMvbG9naW4vYXV0b0xvZ2luIiwiaXNRckNvZGUiOmZhbHNlfQ==`
         } else {
             throw new Error(res.message || '获取认证地址失败')
         }
@@ -158,8 +153,8 @@ const handleTokenLogin = async (token, dataParam) => {
         await new Promise(resolve => setTimeout(resolve, 800))
         const { home } = getQueryParams()
         // 判断是否在白名单中，不在就跳首页
-        const targetPath = home && VALID_PAGES.has(home) ? home : '/pages/index/index'
-        // H5 跳转到首页
+        const targetPath = home ? home : '/pages/index/index'
+        // H5 跳转到目标页面
         uni.redirectTo({
             url: targetPath
         })
@@ -334,8 +329,12 @@ onMounted(() => {
     } else {
         // 平板和PC端都重定向到PC端地址,如果有pcHome参数则跳转到对应PC端页面
         const urlParams = new URLSearchParams(window.location.search)
-        const pcHomeUrl = urlParams.get('pcHome') ? urlParams.get('pcHome') : ''
-        window.location.href = pcHomeUrl ? `http://sys.hexianzhu.com/autoLogin?home=${pcHomeUrl}` : 'http://sys.hexianzhu.com/autoLogin'
+        const pcHomeUrl = urlParams.get('pcHome') || '' // PC端跳转页面参数,URLSearchParams.get() 方法会自动进行一次URL解码
+        const baseUrl = 'http://sys.hexianzhu.com/autoLogin'; // PC端自动登录地址
+        // 构建完整的URL http://sys.hexianzhu.com/autoLogin?home=/performance-analysis/tree-daily-report?day=2026-03-27
+        window.location.href = pcHomeUrl ? `${baseUrl}?home=${pcHomeUrl}` : baseUrl;
+
+        // window.location.href = pcHomeUrl ? `http://sys.hexianzhu.com/autoLogin?home=${pcHomeUrl}` : `http://sys.hexianzhu.com/autoLogin`
         // window.location.href = pcHomeUrl ? `http://192.168.1.24:3000/autoLogin?home=${pcHomeUrl}` : 'http://192.168.1.24:3000/autoLogin'
     }
 })

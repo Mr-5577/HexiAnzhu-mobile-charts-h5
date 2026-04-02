@@ -106,6 +106,12 @@ import PullDownRefresh from '@/components/pull-down-refresh/index.vue'
 import dayjs from 'dayjs'
 import { ref, computed, onMounted } from 'vue'
 import { largeScreenApi } from '@/common/api.js'
+import { onLoad } from '@dcloudio/uni-app'
+
+// 让组件不自动继承属性
+defineOptions({
+    inheritAttrs: false
+})
 
 // 响应式数据
 const pullHeight = ref(0)
@@ -265,9 +271,26 @@ const refreshAllComponents = () => {
 		}
 	});
 };
+onLoad((options) => {
+	console.log('接收到的参数:', options)
+	// 处理 day 参数
+	if (options.day) {
+		// 根据 day 参数设置日期  options.day 是字符串类型
+		const dayValue = options.day
+		// 假设 day 参数格式是 'YYYY-MM-DD'  需要验证日期格式的有效性
+		if (dayjs(dayValue).isValid()) {
+			dateTime.value = dayValue
+		} else {
+			dateTime.value = dayjs().format('YYYY-MM-DD')
+		}
+	}
+})
 // 生命周期
 onMounted(async () => {
-	dateTime.value = dayjs().format('YYYY-MM-DD')
+	// 只有在 onLoad 没有设置 dateTime 时才使用默认值
+	if (!dateTime.value) {
+		dateTime.value = dayjs().format('YYYY-MM-DD')
+	}
 	// 先加载项目数据再请求子组件数据
 	await getProjectData()
 	setTimeout(() => {

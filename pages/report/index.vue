@@ -1,8 +1,8 @@
 <template>
     <view class="report-page">
         <!-- 固定导航栏 -->
-        <custom-navbar title="销售报表" :show-left="true" :show-more-menu="true" :show-right="true"
-            fixed :translucent="true" :border-bottom="showNavBorder">
+        <custom-navbar title="销售报表" :show-left="true" :show-more-menu="true" :show-right="true" fixed
+            :translucent="true" :border-bottom="showNavBorder">
             <template #right>
                 <view @click="openSearchPopup">
                     <uni-icons type="search" size="22" color="#333" />
@@ -148,7 +148,11 @@ import PullDownRefresh from '@/components/pull-down-refresh/index.vue'
 import dayjs from 'dayjs'
 import { ref, computed, onMounted, nextTick } from 'vue'
 import { largeScreenApi, saleReportApi } from '@/common/api.js'
-
+import { onLoad } from '@dcloudio/uni-app'
+// 让组件不自动继承属性
+defineOptions({
+    inheritAttrs: false
+})
 // 响应式数据
 const pullHeight = ref(0)
 const isPulling = ref(false)
@@ -479,11 +483,28 @@ const getReportDate = () => {
         return now.subtract(1, 'day').format('YYYY-MM-DD')
     }
 }
+onLoad((options) => {
+    console.log('接收到的参数:', options)
+    if (options.day) {
+        // 根据 day 参数设置日期  options.day 是字符串类型
+        const dayValue = options.day
+        // 假设 day 参数格式是 'YYYY-MM-DD'  需要验证日期格式的有效性
+        if (dayjs(dayValue).isValid()) {
+            dateTime.value = dayValue
+            cacheParams.value.dateTime = dayValue
+        } else {
+            dateTime.value = getReportDate()
+            cacheParams.value.dateTime = dateTime.value
+        }
+    }
+})
 // 生命周期
 onMounted(async () => {
-    // 根据时间判断获取对应的日期
-    dateTime.value = getReportDate()
-    cacheParams.value.dateTime = dateTime.value
+    // 只有在 onLoad 没有设置 dateTime 时才使用默认值
+    if (!dateTime.value) {
+        dateTime.value = getReportDate()
+        cacheParams.value.dateTime = dateTime.value
+    }
     // 先加载项目数据再请求子组件数据
     await getProjectData()
     await getReportData()

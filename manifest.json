@@ -17,7 +17,7 @@
     "template": "index.html",
     "domain": "",
     "devServer": {
-      "port": 8099,
+      "port": 8098,
       "disableHostCheck": true,
       "proxy": {
         "/api": {
