@@ -4,6 +4,12 @@
         <!-- 标题区域 -->
         <view class="chart-header">
             <text class="chart-title">未回款统计</text>
+            <view class="type-filter">
+                <text v-for="(item, index) in CHART_TYPES" :key="index" class="type-item"
+                    :class="{ 'active': chartType === item.value }" @click="switchChartType(item.value)">
+                    {{ item.label }}
+                </text>
+            </view>
         </view>
 
         <!-- 图表区域 -->
@@ -57,21 +63,46 @@ const isRequesting = ref(false)
 const chartInstance = shallowRef(null)
 const structuralRef = ref(null)
 
+const CHART_TYPES = ref([
+    { label: '金额', value: '1' },
+    { label: '套数', value: '2' },
+])
+const chartType = ref('1') // 默认金额
+// 切换图表类型
+const switchChartType = (type) => {
+    if (chartType.value === type) return
+    chartType.value = type
+    nextTick(() => {
+        updateChart()
+    })
+}
+// 获取金额数据
+const getAmountData = () => ([
+    { name: '已签约', value: formatNumber(props.sumData.signOutstdMoney) },
+    { name: '未签约', value: formatNumber(props.sumData.notSignOutstdMoney) },
+    { name: '物业借款', value: formatNumber(props.sumData.loanOutstdMoney) }
+])
+
+// 获取套数数据
+const getCountData = () => ([
+    { name: '已签约', value: props.sumData.signNum || 0 },
+    { name: '未签约', value: props.sumData.notSignNum || 0 },
+    { name: '物业借款', value: formatNumber(props.sumData.loanNum) }
+])
+
 const proportionData = computed(() => {
-    if (props.sumData) {
-        return [
-            { name: '已签约', value: props.sumData.signNum || 0 },
-            { name: '未签约', value: props.sumData.notSignNum || 0 },
-            { name: '物业借款', value: formatNumber(props.sumData.loanNum) || 0 },
-        ]
-    } else {
+    if (!props.sumData) {
+        // 默认数据
         return [
             { name: '已签约', value: 0 },
             { name: '未签约', value: 0 },
-            { name: '物业借款', value: 0 },
+            { name: '物业借款', value: 0 }
         ]
-
     }
+    if (chartType.value === '1') {
+        return getAmountData()
+    }
+    return getCountData()
 })
 // 计算总数
 const total = computed(() => {
@@ -258,6 +289,9 @@ defineExpose({ refreshData: fetchData })
     .chart-header {
         margin-bottom: 24rpx;
         position: relative;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
 
         .chart-title {
             font-size: 30rpx;
@@ -282,6 +316,49 @@ defineExpose({ refreshData: fetchData })
                 border-radius: 3rpx;
             }
         }
+
+        .type-filter {
+            display: flex;
+            align-items: center;
+            background: rgba(224, 247, 250, 0.15);
+            border-radius: 20rpx;
+            padding: 2rpx;
+            border: 1rpx solid rgba(224, 247, 250, 0.3);
+            box-shadow:
+                0 2rpx 8rpx rgba(224, 247, 250, 0.1),
+                inset 0 1rpx 0 rgba(255, 255, 255, 0.3);
+            overflow: hidden;
+            white-space: nowrap;
+            height: 44rpx;
+            gap: 15rpx;
+        }
+
+        .type-item {
+            padding: 0 14rpx;
+            font-size: 22rpx;
+            font-weight: 500;
+            color: #626aef;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            min-width: 50rpx;
+            height: 36rpx;
+            line-height: 36rpx;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 16rpx;
+
+            background: rgba(239, 240, 253, 0.5);
+
+            &.active {
+                color: #ffffff;
+                background: linear-gradient(135deg, #409eff 0%, #626aef 100%);
+                font-weight: 600;
+                box-shadow: 0 2rpx 6rpx rgba(64, 158, 255, 0.3),
+                    inset 0 1rpx 0 rgba(255, 255, 255, 0.3);
+                padding: 0 18rpx;
+            }
+        }
     }
 
     .chart-content {
@@ -292,6 +369,8 @@ defineExpose({ refreshData: fetchData })
             width: 100%;
             height: 100%;
         }
+
+
     }
 }
 
