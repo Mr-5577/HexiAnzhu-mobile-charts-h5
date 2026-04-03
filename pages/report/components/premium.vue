@@ -2,10 +2,18 @@
 <template>
     <view class="premium">
         <view class="premium-header">
-            <text class="premium-title">项目统计</text>
-            <!-- <text v-if="scaleFactor !== 1" class="scale-tip">溢价已缩放 {{ scaleText }}</text> -->
+            <view style="display: flex;align-items: center;">
+                <text class="premium-title">
+                    项目统计
+                </text>
+                <!-- <text v-if="scaleFactor !== 1" class="scale-tip">回款已缩放 {{ scaleText }}</text> -->
+            </view>
+            <label class="checkbox-select" @click="toggleSelect">
+                <checkbox :checked="isSelected" style="transform:scale(0.7)" @click.stop="toggleSelect" />
+                <text class="checkbox-text" :class="{ 'checkbox-text-selected': isSelected }">隐藏无数据项目</text>
+            </label>
         </view>
-        <div ref="chartDom" class="chart-area"></div>
+        <div ref="chartDom" class="chart-area" :style="{ height: chartHeight }"></div>
         <!-- 遮罩层组件 -->
         <loading-mask :visible="loading" text="加载中..." />
     </view>
@@ -32,47 +40,54 @@ const chartInstance = shallowRef(null)
 const chartDom = ref(null)
 const scaleFactor = ref(1) // 缩放因子
 const scaleText = ref('')
-
+const isSelected = ref(true) // 是否隐藏无数据项目
+// 切换选中
+const toggleSelect = (event) => {
+    // 防止事件冒泡导致重复触发
+    if (event) {
+        event.stopPropagation()
+    }
+    isSelected.value = !isSelected.value
+}
 // 图表数据
 const chartData = ref({
     // categories: ['项目一', '项目二', '项目三', '项目四', '项目五', '项目六', '项目一', '项目二', '项目三', '项目四', '项目五', '项目六'],
-    // values: [3, 4, 6, 5, 7, 4, 3, 4, 6, 5, 7, 4],    // 退房
-    // values2: [65, 78, 52, 45, 88, 67, 65, 78, 52, 45, 88, 67],   // 挞定
-    // values3: [-850, 62, 380, -76, 430, -290, 85, 62, 38, 76, 43, 29],    // 溢价
+    // values: [3, 4, 6, 5, 7, 4, 3, 4, 6, 5, 7, 4],    // 认购
+    // values2: [65, 78, 52, 45, 88, 67, 65, 78, 52, 45, 88, 67],   // 签约
+    // values3: [-850, 62, 380, -76, 430, -290, 85, 62, 38, 76, 43, 29],    // 回款
     categories: [], // 项目名称
-    values: [],    // 退房
-    values2: [],   // 挞定
-    values3: [],    // 溢价
-    rawValues3: [] // 原始溢价数据
+    values: [],    // 认购
+    values2: [],   // 签约
+    values3: [],    // 回款
+    rawValues3: [] // 原始回款数据
 })
 
 /**
  * 数据标准化处理函数
- * @description 当溢价金额远大于退房/挞定套数时，对溢价数据进行等比缩放，使所有数据能在同一图表中合理显示
+ * @description 当回款金额远大于认购/签约套数时，对回款数据进行等比缩放，使所有数据能在同一图表中合理显示
  * @param {Object} data - 原始数据对象
  * @param {Array} data.categories - 项目名称列表
- * @param {Array} data.values - 退房数据（套数）
- * @param {Array} data.values2 - 挞定数据（套数）
- * @param {Array} data.values3 - 溢价数据（金额/万元）
+ * @param {Array} data.values - 认购数据（套数）
+ * @param {Array} data.values2 - 签约数据（套数）
+ * @param {Array} data.values3 - 回款数据（金额/万元）
  * @returns {Object} 处理后的数据对象（包含缩放后的values3和原始rawValues3）
  */
 const normalizeData = (data) => {
     if (!data || !data.values3) return data
 
     // 计算各系列的最大绝对值（使用Math.abs处理负数，加1防止除0）
-    const maxAbs1 = Math.max(...data.values.map(Math.abs), 1)   // 退房最大值
-    const maxAbs2 = Math.max(...data.values2.map(Math.abs), 1)  // 挞定最大值
-    const maxAbs3 = Math.max(...data.values3.map(Math.abs), 1)  // 溢价最大值
+    const maxAbs1 = Math.max(...data.values.map(Math.abs), 1)   // 认购最大值
+    const maxAbs2 = Math.max(...data.values2.map(Math.abs), 1)  // 签约最大值
+    const maxAbs3 = Math.max(...data.values3.map(Math.abs), 1)  // 回款最大值
 
-    // 获取除溢价外的最大值（套数指标）
+    // 获取除回款外的最大值（套数指标）
     const maxOther = Math.max(maxAbs1, maxAbs2)
 
-    // 判断是否需要缩放：溢价超过套数指标的30倍时进行缩放
-    const needScale = maxAbs3 > maxOther * 30
-
+    // 判断是否需要缩放：回款超过套数指标的40倍时进行缩放
+    const needScale = maxAbs3 > maxOther * 40
     if (needScale) {
-        // 计算缩放因子：让溢价最大值略高于套数最大值（1.2倍），便于观察
-        const targetMax = maxOther * 1.2     // 目标峰值
+        // 计算缩放因子：让回款最大值略高于套数最大值（3倍），便于观察
+        const targetMax = maxOther * 3     // 目标峰值
         const factor = targetMax / maxAbs3   // 缩放因子（小于1）
 
         // 保存缩放信息用于界面提示
@@ -125,7 +140,7 @@ const chartOption = computed(() => {
                     const dataIndex = param.dataIndex
                     let value = param.value
 
-                    if (seriesName === '溢价') {
+                    if (seriesName === '回款') {
                         // 显示原始值
                         value = chartData.value.rawValues3[dataIndex]
                         res += `${param.marker} ${seriesName}: ${value} 万元\n`
@@ -145,13 +160,13 @@ const chartOption = computed(() => {
             itemHeight: 8,
             itemGap: 15,
             textStyle: { fontSize: 10, color: '#333' },
-            data: ['退房', '挞定', '溢价']
+            data: ['认购', '签约', '回款']
         },
         grid: {
-            left: '10%',
-            right: '5%',
+            left: '5%',
+            right: '8%',
             bottom: '4%',
-            top: '5%',
+            top: 26,
             containLabel: false
         },
         xAxis: {
@@ -173,7 +188,7 @@ const chartOption = computed(() => {
         },
         series: [
             {
-                name: '退房',
+                name: '认购',
                 type: 'bar',
                 data: chartData.value.values,
                 barWidth: 6,
@@ -207,7 +222,7 @@ const chartOption = computed(() => {
                 }
             },
             {
-                name: '挞定',
+                name: '签约',
                 type: 'bar',
                 data: chartData.value.values2,
                 barWidth: 6,
@@ -241,7 +256,7 @@ const chartOption = computed(() => {
                 }
             },
             {
-                name: '溢价',
+                name: '回款',
                 type: 'bar',
                 data: chartData.value.values3,
                 barWidth: 6,
@@ -291,7 +306,7 @@ const initChart = () => {
 
 const updateChart = () => {
     if (!chartInstance.value) return
-    chartInstance.value.setOption(chartOption.value, true)
+    chartInstance.value.setOption(chartOption.value, false)
 }
 
 const disposeChart = () => {
@@ -345,7 +360,6 @@ const fetchData = async () => {
 
     try {
         const params = getRequestParams()
-
         if (chartDom.value) {
             await nextTick()
             initChart()
@@ -358,26 +372,96 @@ const fetchData = async () => {
     }
 }
 
+// 缓存原始数据
+const cachedRawData = ref(null)
+// 处理数据
 const processData = (data) => {
     if (data && data.length > 0) {
-        // 处理数据
-        const rawData = data.reduce((acc, item) => {
+        // 处理数据并缓存原始数据
+        cachedRawData.value = data.reduce((acc, item) => {
             acc.categories.push(item?.projName || '未知项目')
-            acc.values.push(formatNumber(item?.dayCheckoutNum) || 0) // 退房
-            acc.values2.push(0) // 挞定，目前挞定和退房时合并在一起的
-            acc.values3.push(formatNumber(item?.dayPemMoney) || 0) // 溢价
+            acc.values.push(formatNumber(item?.dayOrderNum) || 0) // 认购
+            acc.values2.push(formatNumber(item?.daySignNum) || 0) // 签约
+            acc.values3.push(formatNumber(item?.dayRecMoney) || 0) // 回款
             return acc
         }, { categories: [], values: [], values2: [], values3: [] })
 
-        chartData.value = normalizeData(rawData)
+        // chartData.value = normalizeData(rawData)
+        filterAndUpdate()
     } else {
         resetData()
+        nextTick(() => {
+            initChart()
+        })
     }
+}
+
+// 添加这两个变量
+const chartHeight = ref('1200rpx')
+const ITEM_HEIGHT = 56 // 每个项目高度(rpx)
+// 应用过滤并更新图表
+const filterAndUpdate = () => {
+    if (!cachedRawData.value) return
+
+    // 根据过滤条件获取数据
+    let dataToUse = cachedRawData.value
+    if (isSelected.value) {
+        dataToUse = filterZeroData(cachedRawData.value)
+    }
+
+    // 计算新高度
+    const newHeight = 100 + (dataToUse.categories.length * ITEM_HEIGHT)
+    chartHeight.value = Math.min(newHeight, 1500) + 'rpx'
+
+    // 更新 chartData
+    chartData.value = normalizeData(dataToUse)
+
+    // // 如果图表已存在，只更新数据，不重新初始化
+    // if (chartInstance.value && !chartInstance.value.isDisposed()) {
+    //     // 只更新变化的部分
+    //     chartInstance.value.setOption(chartOption.value, false)
+    //     // 让图表重新适应容器
+    //     chartInstance.value.resize()
+    // } else {
+    //     // 图表不存在才初始化
+    //     initChart()
+    // }
+    
+    // 确保图表在数据更新后重新渲染,动态高度
     nextTick(() => {
         initChart()
     })
 }
+// 过滤掉所有数据都为零的项目
+const filterZeroData = (data) => {
+    const filtered = {
+        categories: [],
+        values: [],
+        values2: [],
+        values3: []
+    }
+    for (let i = 0; i < data.categories.length; i++) {
+        // 检查认购、签约、回款是否都为零（或空值）
+        const isAllZero = (data.values[i] === 0 || data.values[i] === null) &&
+            (data.values2[i] === 0 || data.values2[i] === null) &&
+            (data.values3[i] === 0 || data.values3[i] === null)
 
+        // 如果不是全零，则保留该条数据
+        if (!isAllZero) {
+            filtered.categories.push(data.categories[i])
+            filtered.values.push(data.values[i])
+            filtered.values2.push(data.values2[i])
+            filtered.values3.push(data.values3[i])
+        }
+    }
+    return filtered
+}
+// 监听 isSelected
+watch(isSelected, () => {
+    if (cachedRawData.value) {
+        filterAndUpdate()
+    }
+})
 watch(
     () => props.projectData,
     (newData) => {
@@ -445,6 +529,24 @@ defineExpose({ refreshData: fetchData })
             }
         }
 
+        .checkbox-select {
+            display: flex;
+            align-items: center;
+
+            :deep(.uni-checkbox-input) {
+                margin: 0 !important;
+            }
+
+            .checkbox-text {
+                font-size: 26rpx;
+                color: #999999;
+            }
+
+            .checkbox-text-selected {
+                color: #007aff;
+            }
+        }
+
         .scale-tip {
             font-size: 20rpx;
             color: #ff8c00;
@@ -456,7 +558,7 @@ defineExpose({ refreshData: fetchData })
 
     .chart-area {
         width: 100%;
-        height: 1200rpx;
+        // height: 1200rpx;
     }
 }
 
