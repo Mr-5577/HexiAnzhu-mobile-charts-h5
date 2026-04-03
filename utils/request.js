@@ -134,7 +134,7 @@ const request = (options = {}) => {
     };
     // 添加token
     const token = uni.getStorageSync("token") || "";
-    // const token = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIwMDAwMTUiLCJ1c2VySWQiOjE1LCJ1c2VybmFtZSI6IjAwMDAxNSIsImlhdCI6MTc3NTAyNTExMCwiZXhwIjoxNzc1MTExNTEwfQ.Sg9-PvyOIZ65GFK8OtQMoDZPK6voDwKACG5O7Jp_wkc";
+    // const token = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIwMDAwMTUiLCJ1c2VySWQiOjE1LCJ1c2VybmFtZSI6IjAwMDAxNSIsImlhdCI6MTc3NTE3OTE3NywiZXhwIjoxNzc1MjY1NTc3fQ.t8-DgHRcjQooG6paJmUJ56pdRFu_5oEDuLsiRYx1AXw";
     if (token) {
       requestConfig.header.Authorization = `Bearer ${token}`;
     }
