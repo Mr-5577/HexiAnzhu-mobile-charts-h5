@@ -132,7 +132,7 @@ const chartOption = computed(() => ({
         {
             name: '未回款统计',
             type: 'pie',
-            radius: ['35%', '55%'],
+            radius: ['30%', '50%'],
             center: ['50%', '50%'],
             avoidLabelOverlap: true,
             minShowLabelAngle: 1,
@@ -151,13 +151,14 @@ const chartOption = computed(() => ({
                 fontWeight: 'normal',
                 minAngle: 0,
                 overflow: 'break',
-                hideOverlap: false,
+                hideOverlap: false,  // 启用自动隐藏重叠标签
                 formatter: function (params) {
                     let percent = '0'
                     if (total.value > 0) {
                         percent = ((params.value / total.value) * 100).toFixed(1)
                     }
-                    return `{a|${params.name}}\n {b|${params.value}(${percent}%)}`
+                    const unit = chartType.value === '1' ? '万' : '套'
+                    return `{a|${params.name}}\n{b|${params.value}${unit}}\n(${percent}%)`
                 },
                 rich: {
                     a: {
@@ -185,10 +186,12 @@ const chartOption = computed(() => ({
                     shadowColor: 'rgba(0, 0, 0, 0.5)'
                 }
             },
+            // 增加标签之间的间距
+            avoidLabelOverlap: true,
             labelLine: {
                 show: true,
-                length: 10,
-                length2: 14,
+                length: 15, // 导线长度
+                length2: 20, // 第二段导线长度
                 smooth: true
             },
             data: proportionData.value.map((item, index) => ({
