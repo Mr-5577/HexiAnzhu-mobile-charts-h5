@@ -723,7 +723,11 @@ onMounted(async () => {
         .info-item {
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 8rpx;
+
+            &:first-child { flex: 1; }      // 项目
+            &:nth-child(3) { flex: 1.5; }   // 日期，给更大的空间
 
             .info-label {
                 font-size: 24rpx;
@@ -737,8 +741,9 @@ onMounted(async () => {
                 color: #333;
                 white-space: nowrap;
                 max-width: 150rpx;
-                overflow: hidden;
-                text-overflow: ellipsis;
+                overflow: visible;
+                text-overflow: clip;
+                flex: 1;
             }
         }
 

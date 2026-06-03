@@ -1,7 +1,11 @@
-import { post } from "@/utils/request";
+import { post, get } from "@/utils/request";
 
 // 用户相关接口
 export const userApi = {
+  // 测试接口
+  test: () => {
+    return get("/test/test1");
+  },
   // 登录
   login(data) {
     return post("/auth/login", data, {
@@ -26,11 +30,13 @@ export const userApi = {
 export const largeScreenApi = {
   // 获取项目列表
   getProjList: () => {
-    return post("/emp/getProjList");
+    // return post("/emp/getProjList");
+    return post("/mainData/project/getAuthProjList");
   },
   // 获取项目列表(树)
   getProjTree: () => {
-    return post("/emp/getProjTree");
+    // return post("/emp/getProjTree");
+    return post("/mainData/project/getAuthProjTree");
   },
   // 获取销售业绩数据
   getSaleInfo: (data) => {
